@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan App — Gastos, Calculadora, Histórico</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f7fa;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+  .app { max-width: 1400px; margin: 0 auto; }
+
+  /* ========== Top bar ========== */
+  .topbar {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 1.3em; font-weight: 600; }
+  .file-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .file-name {
+    background: rgba(255,255,255,0.15);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-family: ui-monospace, "Cascadia Code", monospace;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.82em;
+    font-weight: 500;
+    background: rgba(255,255,255,0.15);
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
+  }
+  .status-pill.connected .status-dot { background: #10b981; }
+  .status-pill.saving .status-dot { background: #f59e0b; animation: pulse 1s infinite; }
+  .status-pill.saved .status-dot { background: #10b981; }
+  .status-pill.error .status-dot { background: #ef4444; }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  .btn {
+    background: white;
+    color: #1e3a8a;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #f3f4f6; }
+  .btn-ghost {
+    background: transparent;
+    color: white;
+    border: 1.5px solid rgba(255,255,255,0.4);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+
+  /* ========== Tabs ========== */
+  .tab-nav {
+    background: white;
+    display: flex;
+    padding: 0 24px;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    padding: 14px 22px;
+    font-size: 0.95em;
+    font-weight: 500;
+    cursor: pointer;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+  }
+  .tab-btn:hover { color: #1e3a8a; }
+  .tab-btn.active {
+    color: #1e3a8a;
+    border-bottom-color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .tab-content { padding: 24px; }
+  .tab-content.hidden { display: none; }
+
+  /* ========== Empty state ========== */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #cbd5e1;
+  }
+  .empty-state h2 {
+    color: #1e3a8a;
+    margin-bottom: 12px;
+  }
+  .empty-state p {
+    color: #6b7280;
+    margin-bottom: 20px;
+  }
+  .empty-state .big-btn {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    font-size: 1.05em;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .empty-state .big-btn:hover { background: #1e40af; }
+  .empty-state small {
+    display: block;
+    margin-top: 14px;
+    color: #9ca3af;
+    font-size: 0.85em;
+  }
+
+  /* ========== Year tabs ========== */
+  .year-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .year-tab {
+    background: white;
+    border: 1.5px solid #d1d5db;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.15s;
+    font-family: inherit;
+    font-size: 0.95em;
+  }
+  .year-tab:hover { border-color: #3b82f6; color: #1e3a8a; }
+  .year-tab.active {
+    background: #1e3a8a;
+    color: white;
+    border-color: #1e3a8a;
+  }
+  .year-tab .delete-x {
+    display: inline-block;
+    margin-left: 6px;
+    color: inherit;
+    opacity: 0.5;
+    cursor: pointer;
+  }
+  .year-tab .delete-x:hover { opacity: 1; }
+  .add-year-btn {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: 1.5px dashed #3b82f6;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.92em;
+    font-weight: 500;
+  }
+  .add-year-btn:hover { background: #dbeafe; }
+
+  /* ========== Gastos table ========== */
+  .panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .panel h3 {
+    color: #1e3a8a;
+    margin-bottom: 14px;
+    font-size: 1.05em;
+  }
+
+  .gastos-table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+  .gastos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    min-width: 1100px;
+  }
+  .gastos-table th {
+    background: #1e3a8a;
+    color: white;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85em;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+  }
+  .gastos-table th.col-concepto { text-align: left; min-width: 160px; padding-left: 12px; }
+  .gastos-table th.col-codigo { text-align: left; min-width: 110px; }
+  .gastos-table th.col-total { background: #1e40af; }
+  .gastos-table td {
+    padding: 4px 4px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: right;
+  }
+  .gastos-table tbody tr:hover { background: #f9fafb; }
+  .cell-input {
+    width: 100%;
+    padding: 5px 7px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 0.92em;
+    font-family: inherit;
+    background: transparent;
+    text-align: right;
+  }
+  .cell-input.cell-text { text-align: left; }
+  .cell-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+  }
+  .cell-input:hover { background: #f3f4f6; }
+  .cell-input:focus:hover { background: white; }
+  .row-total {
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #f9fafb;
+    padding-right: 10px !important;
+  }
+  .remove-row {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    font-size: 1.1em;
+    cursor: pointer;
+    font-weight: bold;
+    line-height: 1;
+  }
+  .remove-row:hover { background: #fecaca; }
+  .totals-row { background: #eff6ff !important; font-weight: 700; }
+  .totals-row td {
+    padding: 10px 6px !important;
+    border-top: 2px solid #1e3a8a;
+    color: #1e3a8a;
+  }
+  .totals-row .totals-label { text-align: left !important; padding-left: 12px !important; }
+  .totals-row .grand-total { background: #dbeafe; font-size: 1.05em; }
+
+  .add-button {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: 2px dashed #3b82f6;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: 500;
+    margin-top: 12px;
+  }
+  .add-button:hover { background: #dbeafe; }
+
+  /* ========== Stats and chart ========== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+  }
+  .stat-card {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 16px 18px;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+  }
+  .stat-label { color: #6b7280; font-size: 0.82em; margin-bottom: 6px; font-weight: 500; }
+  .stat-value { color: #1e3a8a; font-size: 1.4em; font-weight: 700; line-height: 1.1; }
+  .stat-sub { color: #6b7280; font-size: 0.78em; margin-top: 4px; font-style: italic; }
+
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 6px;
+    height: 220px;
+    padding: 25px 0 28px 0;
+    position: relative;
+  }
+  .bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    position: relative;
+    min-width: 40px;
+  }
+  .bar-fill {
+    width: 100%;
+    background: linear-gradient(180deg, #60a5fa 0%, #1e3a8a 100%);
+    border-radius: 6px 6px 0 0;
+    min-height: 2px;
+    transition: height 0.3s ease;
+  }
+  .bar:hover .bar-fill {
+    background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+  }
+  .bar-label {
+    position: absolute;
+    bottom: -22px;
+    font-size: 0.78em;
+    color: #6b7280;
+  }
+  .bar-value {
+    position: absolute;
+    top: -18px;
+    font-size: 0.7em;
+    color: #1e3a8a;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ========== Calculadora ========== */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
+
+  .calc-field { margin-bottom: 16px; }
+  .calc-field label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+    font-size: 0.92em;
+  }
+  .calc-field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    background: white;
+  }
+  .calc-field input:focus { outline: none; border-color: #3b82f6; }
+  .calc-field small { display: block; color: #6b7280; font-size: 0.82em; margin-top: 4px; }
+
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: white;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 400;
+    transition: all 0.15s;
+  }
+  .radio-label:hover { border-color: #9ca3af; }
+  .radio-label.selected { border-color: #3b82f6; background: #eff6ff; }
+
+  .deducciones-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .deduccion-row {
+    display: grid;
+    grid-template-columns: 1fr 160px 36px;
+    gap: 8px;
+    align-items: center;
+  }
+  .deduccion-row input {
+    padding: 8px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.93em;
+    font-family: inherit;
+    background: white;
+    width: 100%;
+  }
+  .deduccion-row input:focus { outline: none; border-color: #3b82f6; }
+
+  .gastos-total-display {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .gastos-total-display .amount { color: #1e3a8a; font-size: 1.1em; }
+
+  .calc-excedente {
+    color: white;
+    padding: 22px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+    transition: background 0.3s;
+  }
+  .calc-excedente.blue { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+  .calc-excedente.green { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
+  .calc-excedente.red { background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); }
+  .calc-excedente .calc-label { font-size: 0.9em; opacity: 0.9; margin-bottom: 6px; }
+  .calc-excedente .calc-value { font-size: 1.8em; font-weight: 700; line-height: 1.2; }
+  .calc-excedente .calc-sub { font-size: 1em; opacity: 0.9; margin-top: 4px; }
+  .calc-diff {
+    display: inline-block;
+    font-size: 0.78em;
+    margin-top: 10px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.18);
+  }
+  .calc-diff:empty { display: none; }
+
+  .calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9fafb;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border-left: 5px solid;
+    margin-bottom: 10px;
+  }
+  .calc-row.colchon { border-color: #f59e0b; }
+  .calc-row.casa { border-color: #10b981; }
+  .calc-row.jubilacion { border-color: #8b5cf6; }
+  .calc-row-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+    color: white;
+  }
+  .badge.colchon { background: #f59e0b; }
+  .badge.casa { background: #10b981; }
+  .badge.jubilacion { background: #8b5cf6; }
+  .calc-pct { color: #6b7280; font-size: 0.88em; }
+  .calc-row-value { text-align: right; }
+  .calc-row-value .calc-ars { font-size: 1.15em; font-weight: 700; color: #1e3a8a; }
+  .calc-row-value .calc-usd { color: #6b7280; font-size: 0.88em; margin-top: 2px; }
+
+  .calc-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .calc-actions .btn-primary {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .calc-actions .btn-primary:hover { background: #1e40af; }
+  .calc-actions .btn-secondary {
+    background: white;
+    color: #1e3a8a;
+    border: 2px solid #1e3a8a;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .calc-actions .btn-secondary:hover { background: #eff6ff; }
+
+  .load-from-gastos {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .load-from-gastos label { font-weight: 500; color: #92400e; font-size: 0.92em; }
+  .load-from-gastos select {
+    padding: 6px 10px;
+    border: 1.5px solid #fcd34d;
+    border-radius: 6px;
+    font-family: inherit;
+    background: white;
+  }
+  .load-from-gastos button {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9em;
+  }
+  .load-from-gastos button:hover { background: #d97706; }
+
+  /* ========== Histórico ========== */
+  .historico-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    border-left: 5px solid;
+  }
+  .summary-card.colchon { border-color: #f59e0b; }
+  .summary-card.casa { border-color: #10b981; }
+  .summary-card.jubilacion { border-color: #8b5cf6; }
+  .summary-card .label { color: #6b7280; font-size: 0.85em; margin-bottom: 6px; }
+  .summary-card .value { color: #1e3a8a; font-size: 1.6em; font-weight: 700; }
+  .summary-card .sub { color: #6b7280; font-size: 0.8em; margin-top: 4px; }
+
+  .historico-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88em;
+  }
+  .historico-table th {
+    background: #1e3a8a;
+    color: white;
+    padding: 10px 12px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+  .historico-table th:first-child,
+  .historico-table th:nth-child(2) { text-align: left; }
+  .historico-table td {
+    padding: 8px 12px;
+    text-align: right;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .historico-table td:first-child,
+  .historico-table td:nth-child(2) { text-align: left; }
+  .historico-table tr:hover { background: #f9fafb; }
+  .historico-table .acumulado { font-weight: 600; color: #1e3a8a; }
+
+  .line-chart-wrapper {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .line-chart {
+    width: 100%;
+    height: 280px;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #4b5563;
+  }
+  .legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+
+  /* ========== Toast ========== */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1f2937;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 100;
+    max-width: 400px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: #991b1b; }
+  .toast.success { background: #065f46; }
+
+  /* ========== Misc ========== */
+  .hidden { display: none !important; }
+  .info-box {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 14px 0;
+    font-size: 0.92em;
+  }
+  .warn-box {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 14px 0;
+    font-size: 0.92em;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ========== Top bar ========== -->
+  <header class="topbar">
+    <h1>Plan App</h1>
+    <div class="file-status">
+      <span id="file-name" class="file-name">Sin archivo conectado</span>
+      <span id="status-pill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="status-text">Desconectado</span>
+      </span>
+      <button id="reconnect-btn" class="btn hidden">Reconectar</button>
+      <button id="connect-btn" class="btn">Conectar Excel</button>
+      <button id="disconnect-btn" class="btn btn-ghost hidden">Desconectar</button>
+    </div>
+  </header>
+
+  <!-- ========== Tab nav ========== -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="gastos">Gastos</button>
+    <button class="tab-btn" data-tab="calc">Calculadora</button>
+    <button class="tab-btn" data-tab="historico">Histórico de Ahorro</button>
+  </nav>
+
+  <!-- ========== Empty state (when no file) ========== -->
+  <div id="empty-state" class="tab-content empty-state hidden">
+    <h2>Conectá tu Excel para empezar</h2>
+    <p>Esta app usa tu archivo Excel como base de datos.<br>
+    Cada año es una hoja, los cambios se guardan solos.</p>
+    <button id="empty-connect" class="big-btn">Conectar Excel</button>
+    <small>
+      Requiere navegador <strong>Chrome o Edge</strong> (la API de archivos no funciona en Firefox/Safari).<br>
+      Tus datos quedan solo en tu disco — nada se sube a internet.
+    </small>
+  </div>
+
+  <!-- ========== Tab: Gastos ========== -->
+  <section id="tab-gastos" class="tab-content">
+    <div class="year-tabs" id="year-tabs">
+      <!-- year buttons rendered dynamically -->
+    </div>
+
+    <div class="panel">
+      <div class="gastos-table-wrapper">
+        <table class="gastos-table">
+          <thead>
+            <tr>
+              <th class="col-concepto">Concepto</th>
+              <th class="col-codigo">Código</th>
+              <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th>
+              <th>May</th><th>Jun</th><th>Jul</th><th>Ago</th>
+              <th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
+              <th class="col-total">Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="gastos-tbody"></tbody>
+          <tfoot>
+            <tr id="gastos-totales-row" class="totals-row"></tr>
+          </tfoot>
+        </table>
+      </div>
+      <button id="add-concepto-btn" class="add-button">+ Agregar concepto</button>
+    </div>
+
+    <div class="panel">
+      <h3>Estadísticas del año</h3>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Promedio mensual</div>
+          <div class="stat-value" id="stat-promedio">$0</div>
+          <div class="stat-sub">sobre meses con datos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Mes más alto</div>
+          <div class="stat-value" id="stat-max">$0</div>
+          <div class="stat-sub" id="stat-max-mes">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Mes más bajo</div>
+          <div class="stat-value" id="stat-min">$0</div>
+          <div class="stat-sub" id="stat-min-mes">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total año</div>
+          <div class="stat-value" id="stat-total-anio">$0</div>
+          <div class="stat-sub">acumulado</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Evolución mensual</h3>
+      <div class="bar-chart" id="bar-chart"></div>
+    </div>
+  </section>
+
+  <!-- ========== Tab: Calculadora ========== -->
+  <section id="tab-calc" class="tab-content hidden">
+    <div class="load-from-gastos">
+      <label>Cargar gastos del Excel:</label>
+      <select id="calc-year-select"></select>
+      <select id="calc-mes-select">
+        <option>Enero</option><option>Febrero</option><option>Marzo</option>
+        <option>Abril</option><option>Mayo</option><option>Junio</option>
+        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+      </select>
+      <button id="cargar-mes-btn">Cargar este mes</button>
+    </div>
+
+    <div class="calc-grid">
+      <!-- Inputs -->
+      <div class="panel">
+        <h3>Parámetros</h3>
+        <div class="calc-field">
+          <label for="ingreso">Ingreso mensual (ARS)</label>
+          <input type="text" inputmode="decimal" id="ingreso" value="6.000.000">
+        </div>
+
+        <div class="calc-field">
+          <label>Gastos fijos mensuales (ARS)</label>
+          <div id="deducciones-list" class="deducciones-list"></div>
+          <button id="add-deduccion-btn" class="add-button" style="padding: 6px 14px; font-size: 0.88em;">+ Agregar gasto</button>
+          <div class="gastos-total-display">
+            <span>Total gastos</span>
+            <span class="amount" id="gastos-total">$0</span>
+          </div>
+        </div>
+
+        <div class="calc-field">
+          <label for="mep">Cotización dólar MEP (ARS / USD)</label>
+          <input type="text" inputmode="decimal" id="mep" value="1.500">
+        </div>
+
+        <div class="calc-field">
+          <label>Fase del plan</label>
+          <div class="radio-group">
+            <label class="radio-label selected">
+              <input type="radio" name="fase" value="1" checked>
+              <span><strong>Fase 1</strong> — meses 1-13 (con cuota VW)<br>
+                <small style="color:#6b7280;">25% Colchón · 50% Casa · 25% Jubilación</small></span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="fase" value="2">
+              <span><strong>Fase 2</strong> — meses 14-24 (sin cuota VW)<br>
+                <small style="color:#6b7280;">70% Casa · 30% Jubilación</small></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado -->
+      <div class="panel">
+        <h3>Resultado</h3>
+        <div id="excedente-box" class="calc-excedente blue">
+          <div class="calc-label">Excedente para ahorrar</div>
+          <div class="calc-value" id="excedente-ars">$0</div>
+          <div class="calc-sub" id="excedente-usd">≈ USD 0</div>
+          <div class="calc-diff" id="excedente-diff"></div>
+        </div>
+
+        <div class="calc-row colchon">
+          <div class="calc-row-header">
+            <span class="badge colchon">Colchón</span>
+            <span class="calc-pct" id="pct-colchon">25%</span>
+          </div>
+          <div class="calc-row-value">
+            <div class="calc-ars" id="colchon-ars">$0</div>
+            <div class="calc-usd" id="colchon-usd">≈ USD 0</div>
+          </div>
+        </div>
+        <div class="calc-row casa">
+          <div class="calc-row-header">
+            <span class="badge casa">Frasco Casa</span>
+            <span class="calc-pct" id="pct-casa">50%</span>
+          </div>
+          <div class="calc-row-value">
+            <div class="calc-ars" id="casa-ars">$0</div>
+            <div class="calc-usd" id="casa-usd">≈ USD 0</div>
+          </div>
+        </div>
+        <div class="calc-row jubilacion">
+          <div class="calc-row-header">
+            <span class="badge jubilacion">Frasco Jubilación</span>
+            <span class="calc-pct" id="pct-jubilacion">25%</span>
+          </div>
+          <div class="calc-row-value">
+            <div class="calc-ars" id="jubilacion-ars">$0</div>
+            <div class="calc-usd" id="jubilacion-usd">≈ USD 0</div>
+          </div>
+        </div>
+
+        <div class="calc-actions">
+          <button id="registrar-historico-btn" class="btn-primary">Registrar este mes en histórico</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Tab: Histórico ========== -->
+  <section id="tab-historico" class="tab-content hidden">
+    <div class="historico-summary">
+      <div class="summary-card colchon">
+        <div class="label">Colchón acumulado</div>
+        <div class="value" id="hist-colchon">USD 0</div>
+        <div class="sub" id="hist-colchon-sub">0 aportes</div>
+      </div>
+      <div class="summary-card casa">
+        <div class="label">Frasco Casa acumulado</div>
+        <div class="value" id="hist-casa">USD 0</div>
+        <div class="sub" id="hist-casa-sub">0 aportes</div>
+      </div>
+      <div class="summary-card jubilacion">
+        <div class="label">Frasco Jubilación acumulado</div>
+        <div class="value" id="hist-jubilacion">USD 0</div>
+        <div class="sub" id="hist-jubilacion-sub">0 aportes</div>
+      </div>
+    </div>
+
+    <div class="line-chart-wrapper">
+      <h3 style="color:#1e3a8a; margin-bottom:10px;">Evolución del ahorro acumulado (USD)</h3>
+      <svg class="line-chart" id="line-chart" viewBox="0 0 800 280" preserveAspectRatio="none"></svg>
+      <div class="chart-legend">
+        <div class="legend-item"><span class="legend-color" style="background:#f59e0b;"></span>Colchón</div>
+        <div class="legend-item"><span class="legend-color" style="background:#10b981;"></span>Casa</div>
+        <div class="legend-item"><span class="legend-color" style="background:#8b5cf6;"></span>Jubilación</div>
+        <div class="legend-item"><span class="legend-color" style="background:#1e3a8a;"></span>Total</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Registros mensuales</h3>
+      <div style="overflow-x: auto;">
+        <table class="historico-table" id="historico-table">
+          <thead>
+            <tr>
+              <th>Año</th><th>Mes</th>
+              <th>Ingreso ARS</th><th>Gastos ARS</th><th>Excedente ARS</th>
+              <th>MEP</th>
+              <th>Colchón USD</th><th>Casa USD</th><th>Jub. USD</th>
+              <th>Acum. Colchón</th><th>Acum. Casa</th><th>Acum. Jub.</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historico-tbody"></tbody>
+        </table>
+      </div>
+      <div id="historico-empty" class="info-box" style="margin-top: 12px;">
+        Todavía no registraste ningún mes. Andá a la <a href="#" id="goto-calc">Calculadora</a> y apretá
+        "Registrar este mes en histórico" cuando termines de calcular.
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+'use strict';
+
+/* =====================================================
+   HELPERS
+   ===================================================== */
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const HISTORICO_SHEET = 'Histórico Ahorro';
+const TARGET_PCT = 0.20;
+
+const formatARS = v => new Intl.NumberFormat('es-AR', {
+  style: 'currency', currency: 'ARS', maximumFractionDigits: 0
+}).format(v || 0);
+const formatUSD = v => new Intl.NumberFormat('en-US', {
+  style: 'currency', currency: 'USD', maximumFractionDigits: 0
+}).format(v || 0);
+const formatNumberAR = v => {
+  if (v === null || v === undefined || isNaN(v)) return '';
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 0, maximumFractionDigits: 2
+  }).format(v);
+};
+const parseARS = str => {
+  if (typeof str === 'number') return str;
+  if (!str) return 0;
+  const cleaned = String(str).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+  return parseFloat(cleaned) || 0;
+};
+const formatARSCompact = value => {
+  if (!value) return '';
+  if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+  if (value >= 1000) return '$' + Math.round(value / 1000) + 'K';
+  return formatARS(value);
+};
+const formatUSDCompact = value => {
+  if (!value) return '$0';
+  if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'K';
+  return '$' + Math.round(value);
+};
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* =====================================================
+   IndexedDB para persistir el FileHandle
+   ===================================================== */
+const DB_NAME = 'plan-app-db';
+const STORE_NAME = 'handles';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveHandleToIDB(handle) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(handle, 'excel-file');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadHandleFromIDB() {
+  const db = await openDB();
+  return new Promise(resolve => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).get('excel-file');
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => resolve(null);
+  });
+}
+
+async function clearHandleFromIDB() {
+  const db = await openDB();
+  return new Promise(resolve => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete('excel-file');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => resolve();
+  });
+}
+
+/* =====================================================
+   STATE GLOBAL
+   ===================================================== */
+let fileHandle = null;
+let workbook = null;
+let currentYear = null;
+let saveTimer = null;
+let isSaving = false;
+
+// Para la calculadora
+let deducciones = [];
+
+/* =====================================================
+   FILE SYSTEM ACCESS API
+   ===================================================== */
+function fsaaSupported() {
+  return 'showOpenFilePicker' in window;
+}
+
+async function ensurePermission(mode = 'readwrite') {
+  if (!fileHandle) return false;
+  const opts = { mode };
+  if ((await fileHandle.queryPermission(opts)) === 'granted') return true;
+  if ((await fileHandle.requestPermission(opts)) === 'granted') return true;
+  return false;
+}
+
+async function connectFile() {
+  if (!fsaaSupported()) {
+    showToast('Tu navegador no soporta la API de archivos. Usá Chrome o Edge.', 'error');
+    return;
+  }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{
+        description: 'Excel',
+        accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx', '.xls'] }
+      }],
+      multiple: false
+    });
+    fileHandle = handle;
+    await saveHandleToIDB(handle);
+    await loadWorkbook();
+    showToast('Conectado a ' + handle.name, 'success');
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error(err);
+      showToast('No se pudo conectar: ' + err.message, 'error');
+    }
+  }
+}
+
+async function reconnectFile() {
+  if (!fileHandle) return;
+  if (!(await ensurePermission('readwrite'))) {
+    showToast('No diste permiso de lectura/escritura.', 'error');
+    return;
+  }
+  await loadWorkbook();
+  showToast('Reconectado', 'success');
+}
+
+async function disconnectFile() {
+  fileHandle = null;
+  workbook = null;
+  currentYear = null;
+  await clearHandleFromIDB();
+  updateConnectionUI();
+  renderAll();
+  showToast('Desconectado', '');
+}
+
+async function loadWorkbook() {
+  if (!fileHandle) return;
+  try {
+    setStatus('saving', 'Cargando...');
+    const file = await fileHandle.getFile();
+    const buffer = await file.arrayBuffer();
+    workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+
+    // Asegurar hoja de histórico
+    ensureHistoricoSheet();
+
+    // Seleccionar primer año disponible
+    const years = getYearSheets();
+    if (years.length > 0) {
+      currentYear = years[0];
+    } else {
+      // No hay hojas de año, crear una con el año actual
+      const thisYear = new Date().getFullYear();
+      addYearSheet(thisYear);
+      currentYear = String(thisYear);
+    }
+
+    updateConnectionUI();
+    renderAll();
+    setStatus('saved', 'Sincronizado');
+  } catch (err) {
+    console.error(err);
+    setStatus('error', 'Error al leer');
+    showToast('Error al leer el Excel: ' + err.message, 'error');
+  }
+}
+
+async function saveWorkbook() {
+  if (!fileHandle || !workbook) return;
+  if (isSaving) return;
+
+  isSaving = true;
+  setStatus('saving', 'Guardando...');
+
+  try {
+    if (!(await ensurePermission('readwrite'))) {
+      throw new Error('Sin permiso de escritura');
+    }
+    const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const writable = await fileHandle.createWritable();
+    await writable.write(buffer);
+    await writable.close();
+    setStatus('saved', 'Sincronizado');
+  } catch (err) {
+    console.error(err);
+    setStatus('error', 'Error al guardar');
+    showToast('Error al guardar: ' + err.message, 'error');
+  } finally {
+    isSaving = false;
+  }
+}
+
+function debouncedSave() {
+  clearTimeout(saveTimer);
+  setStatus('saving', 'Editando...');
+  saveTimer = setTimeout(saveWorkbook, 1200);
+}
+
+/* =====================================================
+   UI: estado de conexión
+   ===================================================== */
+function setStatus(state, text) {
+  const pill = document.getElementById('status-pill');
+  pill.className = 'status-pill ' + state;
+  document.getElementById('status-text').textContent = text;
+}
+
+function updateConnectionUI() {
+  const empty = document.getElementById('empty-state');
+  const tabs = document.querySelectorAll('.tab-content:not(#empty-state)');
+  const tabNav = document.querySelector('.tab-nav');
+  const fileName = document.getElementById('file-name');
+  const connectBtn = document.getElementById('connect-btn');
+  const reconnectBtn = document.getElementById('reconnect-btn');
+  const disconnectBtn = document.getElementById('disconnect-btn');
+
+  if (fileHandle && workbook) {
+    empty.classList.add('hidden');
+    fileName.textContent = fileHandle.name;
+    connectBtn.classList.add('hidden');
+    reconnectBtn.classList.add('hidden');
+    disconnectBtn.classList.remove('hidden');
+    tabNav.classList.remove('hidden');
+    // Mostrar el tab activo
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    showTab(activeTab);
+  } else if (fileHandle) {
+    // Hay handle pero no workbook (esperando reconexión)
+    empty.classList.remove('hidden');
+    document.querySelectorAll('.tab-content:not(#empty-state)').forEach(t => t.classList.add('hidden'));
+    fileName.textContent = fileHandle.name;
+    connectBtn.classList.add('hidden');
+    reconnectBtn.classList.remove('hidden');
+    disconnectBtn.classList.remove('hidden');
+    setStatus('', 'Esperando reconexión');
+    tabNav.classList.add('hidden');
+  } else {
+    // Sin nada conectado
+    empty.classList.remove('hidden');
+    document.querySelectorAll('.tab-content:not(#empty-state)').forEach(t => t.classList.add('hidden'));
+    fileName.textContent = 'Sin archivo conectado';
+    connectBtn.classList.remove('hidden');
+    reconnectBtn.classList.add('hidden');
+    disconnectBtn.classList.add('hidden');
+    setStatus('', 'Desconectado');
+    tabNav.classList.add('hidden');
+  }
+}
+
+/* =====================================================
+   WORKBOOK / SHEET HELPERS
+   ===================================================== */
+function getYearSheets() {
+  if (!workbook) return [];
+  return workbook.SheetNames
+    .filter(n => /^\d{4}$/.test(n))
+    .sort();
+}
+
+function ensureHistoricoSheet() {
+  if (!workbook) return;
+  if (!workbook.Sheets[HISTORICO_SHEET]) {
+    const headers = ['Año', 'Mes', 'Ingreso ARS', 'Gastos ARS', 'Excedente ARS',
+                     'MEP', 'Excedente USD', 'Colchón USD', 'Casa USD', 'Jubilación USD',
+                     'Fase', 'Fecha registro', 'Notas'];
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    workbook.Sheets[HISTORICO_SHEET] = ws;
+    if (!workbook.SheetNames.includes(HISTORICO_SHEET)) {
+      workbook.SheetNames.push(HISTORICO_SHEET);
+    }
+  }
+}
+
+function addYearSheet(year) {
+  const sheetName = String(year);
+  if (workbook.Sheets[sheetName]) return;
+  const headers = ['Impuesto/Servicio', 'Codigo', ...MESES, 'Total'];
+  const ws = XLSX.utils.aoa_to_sheet([headers]);
+  workbook.Sheets[sheetName] = ws;
+  workbook.SheetNames.push(sheetName);
+  // Ordenar: años primero, después histórico
+  workbook.SheetNames = [
+    ...workbook.SheetNames.filter(n => /^\d{4}$/.test(n)).sort(),
+    ...workbook.SheetNames.filter(n => !/^\d{4}$/.test(n))
+  ];
+  debouncedSave();
+}
+
+function deleteYearSheet(year) {
+  delete workbook.Sheets[year];
+  workbook.SheetNames = workbook.SheetNames.filter(n => n !== year);
+  debouncedSave();
+}
+
+// Lee la hoja de un año y devuelve array de {concepto, codigo, meses}
+function readYearGastos(year) {
+  const ws = workbook.Sheets[year];
+  if (!ws) return [];
+  const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  if (json.length < 2) return [];
+
+  const headers = json[0];
+  // Mapear columnas de meses por nombre
+  const mesColIndex = {};
+  for (let c = 2; c < headers.length; c++) {
+    const colName = String(headers[c] || '').trim();
+    const matched = MESES.find(m => m.toLowerCase() === colName.toLowerCase());
+    if (matched) mesColIndex[matched] = c;
+  }
+
+  const gastos = [];
+  for (let i = 1; i < json.length; i++) {
+    const row = json[i];
+    const concepto = String(row[0] || '').trim();
+    if (!concepto) continue;
+    if (concepto.toLowerCase() === 'totales' || concepto.toLowerCase().startsWith('total')) break;
+
+    const item = {
+      concepto: concepto,
+      codigo: String(row[1] || ''),
+      meses: emptyMeses()
+    };
+    MESES.forEach(mes => {
+      if (mesColIndex[mes] !== undefined) {
+        const v = row[mesColIndex[mes]];
+        const num = typeof v === 'number' ? v : parseARS(v);
+        item.meses[mes] = num;
+      }
+    });
+    gastos.push(item);
+  }
+  return gastos;
+}
+
+// Escribe la hoja de un año desde array de gastos
+function writeYearGastos(year, gastos) {
+  const headers = ['Impuesto/Servicio', 'Codigo', ...MESES, 'Total'];
+  const rows = [headers];
+
+  gastos.forEach(item => {
+    const row = [item.concepto, item.codigo];
+    let total = 0;
+    MESES.forEach(mes => {
+      const v = item.meses[mes] || 0;
+      row.push(v);
+      total += v;
+    });
+    row.push(total);
+    rows.push(row);
+  });
+
+  // Fila de totales
+  const totalsRow = ['TOTALES', ''];
+  let grandTotal = 0;
+  MESES.forEach(mes => {
+    const sum = gastos.reduce((s, item) => s + (item.meses[mes] || 0), 0);
+    totalsRow.push(sum);
+    grandTotal += sum;
+  });
+  totalsRow.push(grandTotal);
+  rows.push(totalsRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 22 }, { wch: 18 }, ...MESES.map(() => ({ wch: 12 })), { wch: 14 }];
+  workbook.Sheets[year] = ws;
+}
+
+function emptyMeses() {
+  return MESES.reduce((acc, m) => { acc[m] = 0; return acc; }, {});
+}
+
+/* =====================================================
+   HISTÓRICO: lectura/escritura
+   ===================================================== */
+function readHistorico() {
+  ensureHistoricoSheet();
+  const ws = workbook.Sheets[HISTORICO_SHEET];
+  const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  return json.map(r => ({
+    año: r['Año'],
+    mes: r['Mes'],
+    ingresoARS: parseFloat(r['Ingreso ARS']) || 0,
+    gastosARS: parseFloat(r['Gastos ARS']) || 0,
+    excedenteARS: parseFloat(r['Excedente ARS']) || 0,
+    mep: parseFloat(r['MEP']) || 0,
+    excedenteUSD: parseFloat(r['Excedente USD']) || 0,
+    colchonUSD: parseFloat(r['Colchón USD']) || 0,
+    casaUSD: parseFloat(r['Casa USD']) || 0,
+    jubilacionUSD: parseFloat(r['Jubilación USD']) || 0,
+    fase: r['Fase'],
+    fecha: r['Fecha registro'] || '',
+    notas: r['Notas'] || ''
+  }));
+}
+
+function writeHistorico(rows) {
+  const headers = ['Año', 'Mes', 'Ingreso ARS', 'Gastos ARS', 'Excedente ARS',
+                   'MEP', 'Excedente USD', 'Colchón USD', 'Casa USD', 'Jubilación USD',
+                   'Fase', 'Fecha registro', 'Notas'];
+  const data = [headers];
+  rows.forEach(r => {
+    data.push([
+      r.año, r.mes, r.ingresoARS, r.gastosARS, r.excedenteARS,
+      r.mep, r.excedenteUSD, r.colchonUSD, r.casaUSD, r.jubilacionUSD,
+      r.fase, r.fecha, r.notas
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+                 { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+                 { wch: 6 }, { wch: 18 }, { wch: 24 }];
+  workbook.Sheets[HISTORICO_SHEET] = ws;
+}
+
+function addHistoricoRow(row) {
+  const all = readHistorico();
+  all.push(row);
+  writeHistorico(all);
+  debouncedSave();
+}
+
+function deleteHistoricoRow(idx) {
+  const all = readHistorico();
+  all.splice(idx, 1);
+  writeHistorico(all);
+  debouncedSave();
+}
+
+/* =====================================================
+   GASTOS VIEW (Tab 1)
+   ===================================================== */
+function renderYearTabs() {
+  const container = document.getElementById('year-tabs');
+  container.innerHTML = '';
+  const years = getYearSheets();
+
+  years.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'year-tab' + (y === currentYear ? ' active' : '');
+    btn.innerHTML = `<span>${y}</span><span class="delete-x" data-year="${y}" title="Eliminar este año">×</span>`;
+    btn.addEventListener('click', e => {
+      if (e.target.classList.contains('delete-x')) {
+        e.stopPropagation();
+        if (confirm(`¿Eliminar la hoja ${y}? Esto borra todos los gastos de ese año.`)) {
+          deleteYearSheet(y);
+          const remaining = getYearSheets();
+          currentYear = remaining[0] || null;
+          if (!currentYear) {
+            // crear una hoja por defecto
+            const thisYear = new Date().getFullYear();
+            addYearSheet(thisYear);
+            currentYear = String(thisYear);
+          }
+          renderGastosView();
+          renderCalcYearSelect();
+        }
+        return;
+      }
+      currentYear = y;
+      renderGastosView();
+    });
+    container.appendChild(btn);
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-year-btn';
+  addBtn.textContent = '+ Agregar año';
+  addBtn.addEventListener('click', () => {
+    const yearStr = prompt('Año a agregar (ej 2027):', String(new Date().getFullYear() + 1));
+    if (!yearStr) return;
+    if (!/^\d{4}$/.test(yearStr)) {
+      alert('Ingresá 4 dígitos.');
+      return;
+    }
+    if (workbook.Sheets[yearStr]) {
+      alert('Esa hoja ya existe.');
+      return;
+    }
+    addYearSheet(parseInt(yearStr));
+    currentYear = yearStr;
+    renderGastosView();
+    renderCalcYearSelect();
+  });
+  container.appendChild(addBtn);
+}
+
+function renderGastosTable() {
+  const tbody = document.getElementById('gastos-tbody');
+  tbody.innerHTML = '';
+  if (!currentYear) return;
+  const gastos = readYearGastos(currentYear);
+
+  gastos.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+
+    const tdConcepto = document.createElement('td');
+    const conceptoInput = document.createElement('input');
+    conceptoInput.type = 'text';
+    conceptoInput.className = 'cell-input cell-text';
+    conceptoInput.value = item.concepto;
+    conceptoInput.placeholder = 'Concepto';
+    conceptoInput.addEventListener('input', e => {
+      gastos[idx].concepto = e.target.value;
+      writeYearGastos(currentYear, gastos);
+      debouncedSave();
+    });
+    tdConcepto.appendChild(conceptoInput);
+    tr.appendChild(tdConcepto);
+
+    const tdCodigo = document.createElement('td');
+    const codigoInput = document.createElement('input');
+    codigoInput.type = 'text';
+    codigoInput.className = 'cell-input cell-text';
+    codigoInput.value = item.codigo;
+    codigoInput.placeholder = '—';
+    codigoInput.addEventListener('input', e => {
+      gastos[idx].codigo = e.target.value;
+      writeYearGastos(currentYear, gastos);
+      debouncedSave();
+    });
+    tdCodigo.appendChild(codigoInput);
+    tr.appendChild(tdCodigo);
+
+    MESES.forEach(mes => {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.className = 'cell-input';
+      input.value = item.meses[mes] > 0 ? formatNumberAR(item.meses[mes]) : '';
+      input.placeholder = '—';
+      input.addEventListener('input', e => {
+        gastos[idx].meses[mes] = parseARS(e.target.value);
+        updateRowTotal(tr, gastos[idx]);
+        renderTotalsRow(gastos);
+        renderStats(gastos);
+        renderChart(gastos);
+        writeYearGastos(currentYear, gastos);
+        debouncedSave();
+      });
+      input.addEventListener('blur', e => {
+        const n = gastos[idx].meses[mes];
+        e.target.value = n > 0 ? formatNumberAR(n) : '';
+      });
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    const tdTotal = document.createElement('td');
+    tdTotal.className = 'row-total';
+    tdTotal.textContent = formatARS(rowSum(item));
+    tr.appendChild(tdTotal);
+
+    const tdDel = document.createElement('td');
+    tdDel.style.textAlign = 'center';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'remove-row';
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', () => {
+      if (confirm(`¿Eliminar "${gastos[idx].concepto || 'este concepto'}"?`)) {
+        gastos.splice(idx, 1);
+        writeYearGastos(currentYear, gastos);
+        debouncedSave();
+        renderGastosTable();
+        renderTotalsRow(gastos);
+        renderStats(gastos);
+        renderChart(gastos);
+      }
+    });
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function rowSum(item) {
+  return MESES.reduce((s, m) => s + (item.meses[m] || 0), 0);
+}
+
+function colSum(gastos, mes) {
+  return gastos.reduce((s, item) => s + (item.meses[mes] || 0), 0);
+}
+
+function updateRowTotal(tr, item) {
+  const totalCell = tr.querySelector('.row-total');
+  if (totalCell) totalCell.textContent = formatARS(rowSum(item));
+}
+
+function renderTotalsRow(gastos) {
+  const row = document.getElementById('gastos-totales-row');
+  row.innerHTML = '';
+
+  const tdLabel = document.createElement('td');
+  tdLabel.colSpan = 2;
+  tdLabel.className = 'totals-label';
+  tdLabel.textContent = 'TOTAL POR MES';
+  row.appendChild(tdLabel);
+
+  let totalAnio = 0;
+  MESES.forEach(mes => {
+    const sum = colSum(gastos, mes);
+    totalAnio += sum;
+    const td = document.createElement('td');
+    td.textContent = sum > 0 ? formatARSCompact(sum) : '—';
+    row.appendChild(td);
+  });
+
+  const tdAnio = document.createElement('td');
+  tdAnio.className = 'grand-total';
+  tdAnio.textContent = formatARS(totalAnio);
+  row.appendChild(tdAnio);
+
+  row.appendChild(document.createElement('td'));
+}
+
+function renderStats(gastos) {
+  const totalsMes = MESES.map(m => colSum(gastos, m));
+  const totalAnio = totalsMes.reduce((s, v) => s + v, 0);
+  const mesesConDatos = totalsMes.filter(v => v > 0);
+  const promedio = mesesConDatos.length > 0 ? totalAnio / mesesConDatos.length : 0;
+
+  let maxIdx = -1, minIdx = -1;
+  totalsMes.forEach((v, i) => {
+    if (v > 0) {
+      if (maxIdx === -1 || v > totalsMes[maxIdx]) maxIdx = i;
+      if (minIdx === -1 || v < totalsMes[minIdx]) minIdx = i;
+    }
+  });
+
+  document.getElementById('stat-promedio').textContent = formatARS(promedio);
+  document.getElementById('stat-max').textContent = maxIdx >= 0 ? formatARS(totalsMes[maxIdx]) : formatARS(0);
+  document.getElementById('stat-max-mes').textContent = maxIdx >= 0 ? MESES[maxIdx] : '—';
+  document.getElementById('stat-min').textContent = minIdx >= 0 ? formatARS(totalsMes[minIdx]) : formatARS(0);
+  document.getElementById('stat-min-mes').textContent = minIdx >= 0 ? MESES[minIdx] : '—';
+  document.getElementById('stat-total-anio').textContent = formatARS(totalAnio);
+}
+
+function renderChart(gastos) {
+  const chart = document.getElementById('bar-chart');
+  chart.innerHTML = '';
+  const totalsMes = MESES.map(m => colSum(gastos, m));
+  const maxVal = Math.max(...totalsMes, 1);
+
+  totalsMes.forEach((value, idx) => {
+    const pct = maxVal > 0 ? (value / maxVal) * 100 : 0;
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.title = `${MESES[idx]}: ${formatARS(value)}`;
+
+    if (value > 0) {
+      const valueLabel = document.createElement('div');
+      valueLabel.className = 'bar-value';
+      valueLabel.textContent = formatARSCompact(value);
+      bar.appendChild(valueLabel);
+    }
+
+    const fill = document.createElement('div');
+    fill.className = 'bar-fill';
+    fill.style.height = pct + '%';
+    bar.appendChild(fill);
+
+    const label = document.createElement('div');
+    label.className = 'bar-label';
+    label.textContent = MESES_CORTOS[idx];
+    bar.appendChild(label);
+
+    chart.appendChild(bar);
+  });
+}
+
+function renderGastosView() {
+  renderYearTabs();
+  if (!currentYear) return;
+  const gastos = readYearGastos(currentYear);
+  renderGastosTable();
+  renderTotalsRow(gastos);
+  renderStats(gastos);
+  renderChart(gastos);
+}
+
+document.getElementById('add-concepto-btn').addEventListener('click', () => {
+  if (!currentYear) return;
+  const gastos = readYearGastos(currentYear);
+  gastos.push({ concepto: '', codigo: '', meses: emptyMeses() });
+  writeYearGastos(currentYear, gastos);
+  debouncedSave();
+  renderGastosTable();
+  renderTotalsRow(gastos);
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#gastos-tbody tr');
+    if (rows.length > 0) rows[rows.length - 1].querySelector('input').focus();
+  }, 0);
+});
+
+/* =====================================================
+   CALCULADORA (Tab 2)
+   ===================================================== */
+function renderDeducciones() {
+  const container = document.getElementById('deducciones-list');
+  container.innerHTML = '';
+
+  deducciones.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'deduccion-row';
+
+    const desc = document.createElement('input');
+    desc.type = 'text';
+    desc.value = d.desc;
+    desc.placeholder = 'Descripción';
+    desc.addEventListener('input', e => { deducciones[i].desc = e.target.value; });
+
+    const monto = document.createElement('input');
+    monto.type = 'text';
+    monto.inputMode = 'decimal';
+    monto.value = formatNumberAR(d.monto);
+    monto.placeholder = '0';
+    monto.addEventListener('input', e => {
+      deducciones[i].monto = parseARS(e.target.value);
+      calcular();
+    });
+    monto.addEventListener('blur', e => {
+      e.target.value = deducciones[i].monto > 0 ? formatNumberAR(deducciones[i].monto) : '';
+    });
+
+    const del = document.createElement('button');
+    del.className = 'remove-row';
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      deducciones.splice(i, 1);
+      renderDeducciones();
+      calcular();
+    });
+
+    row.appendChild(desc);
+    row.appendChild(monto);
+    row.appendChild(del);
+    container.appendChild(row);
+  });
+}
+
+function calcular() {
+  const ingreso = parseARS(document.getElementById('ingreso').value);
+  const gastos = deducciones.reduce((s, d) => s + (d.monto || 0), 0);
+  const mep = parseARS(document.getElementById('mep').value) || 1;
+  const fase = document.querySelector('input[name="fase"]:checked').value;
+
+  document.getElementById('gastos-total').textContent = formatARS(gastos);
+
+  const excedente = ingreso - gastos;
+  const target = ingreso * TARGET_PCT;
+  const diff = excedente - target;
+
+  let pctC, pctK, pctJ;
+  if (fase === '1') { pctC = 0.25; pctK = 0.50; pctJ = 0.25; }
+  else { pctC = 0; pctK = 0.70; pctJ = 0.30; }
+
+  document.getElementById('pct-colchon').textContent = (pctC * 100) + '%';
+  document.getElementById('pct-casa').textContent = (pctK * 100) + '%';
+  document.getElementById('pct-jubilacion').textContent = (pctJ * 100) + '%';
+
+  const colArs = Math.max(0, excedente) * pctC;
+  const casArs = Math.max(0, excedente) * pctK;
+  const jubArs = Math.max(0, excedente) * pctJ;
+
+  document.getElementById('excedente-ars').textContent = formatARS(excedente);
+  document.getElementById('excedente-usd').textContent = '≈ ' + formatUSD(excedente / mep);
+
+  const box = document.getElementById('excedente-box');
+  const diffEl = document.getElementById('excedente-diff');
+  box.classList.remove('red', 'blue', 'green');
+
+  if (ingreso === 0) {
+    box.classList.add('blue'); diffEl.textContent = '';
+  } else {
+    const ratio = excedente / target;
+    if (ratio < 0.95) {
+      box.classList.add('red');
+      if (excedente < 0) {
+        diffEl.textContent = 'Estás en negativo. Faltan ' + formatARS(Math.abs(diff)) + ' para llegar al 20% (' + formatARS(target) + ').';
+      } else {
+        diffEl.textContent = formatARS(Math.abs(diff)) + ' por debajo del 20% (target: ' + formatARS(target) + ').';
+      }
+    } else if (ratio <= 1.05) {
+      box.classList.add('blue');
+      diffEl.textContent = 'En target — 20% del ingreso (' + formatARS(target) + ').';
+    } else {
+      box.classList.add('green');
+      diffEl.textContent = '+' + formatARS(diff) + ' por encima del 20% (target: ' + formatARS(target) + ').';
+    }
+  }
+
+  document.getElementById('colchon-ars').textContent = formatARS(colArs);
+  document.getElementById('colchon-usd').textContent = '≈ ' + formatUSD(colArs / mep);
+  document.getElementById('casa-ars').textContent = formatARS(casArs);
+  document.getElementById('casa-usd').textContent = '≈ ' + formatUSD(casArs / mep);
+  document.getElementById('jubilacion-ars').textContent = formatARS(jubArs);
+  document.getElementById('jubilacion-usd').textContent = '≈ ' + formatUSD(jubArs / mep);
+}
+
+document.getElementById('add-deduccion-btn').addEventListener('click', () => {
+  deducciones.push({ desc: '', monto: 0 });
+  renderDeducciones();
+  calcular();
+});
+
+function renderCalcYearSelect() {
+  const sel = document.getElementById('calc-year-select');
+  sel.innerHTML = '';
+  getYearSheets().forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    sel.appendChild(opt);
+  });
+  // Por defecto: año actual si existe
+  const thisYear = String(new Date().getFullYear());
+  if ([...sel.options].some(o => o.value === thisYear)) sel.value = thisYear;
+}
+
+document.getElementById('cargar-mes-btn').addEventListener('click', () => {
+  const year = document.getElementById('calc-year-select').value;
+  const mes = document.getElementById('calc-mes-select').value;
+  if (!year) {
+    showToast('No hay años cargados.', 'error');
+    return;
+  }
+  const gastos = readYearGastos(year);
+  const conceptos = gastos
+    .filter(item => (item.meses[mes] || 0) > 0)
+    .map(item => ({ desc: item.concepto, monto: item.meses[mes] || 0 }));
+
+  if (conceptos.length === 0) {
+    showToast(`No hay gastos cargados en ${mes} ${year}.`, 'error');
+    return;
+  }
+
+  deducciones = conceptos;
+  renderDeducciones();
+  calcular();
+  showToast(`Cargados ${conceptos.length} conceptos de ${mes} ${year}`, 'success');
+});
+
+document.getElementById('registrar-historico-btn').addEventListener('click', () => {
+  const ingreso = parseARS(document.getElementById('ingreso').value);
+  const gastos = deducciones.reduce((s, d) => s + (d.monto || 0), 0);
+  const mep = parseARS(document.getElementById('mep').value) || 1;
+  const fase = document.querySelector('input[name="fase"]:checked').value;
+  const excedente = ingreso - gastos;
+
+  if (excedente <= 0) {
+    if (!confirm('El excedente es 0 o negativo. ¿Registrar igual?')) return;
+  }
+
+  const year = document.getElementById('calc-year-select').value || String(new Date().getFullYear());
+  const mes = document.getElementById('calc-mes-select').value;
+
+  // Check duplicado
+  const existing = readHistorico();
+  const dup = existing.find(r => String(r.año) === String(year) && r.mes === mes);
+  if (dup) {
+    if (!confirm(`Ya hay un registro para ${mes} ${year}. ¿Reemplazarlo?`)) return;
+    const idx = existing.indexOf(dup);
+    existing.splice(idx, 1);
+    writeHistorico(existing);
+  }
+
+  let pctC, pctK, pctJ;
+  if (fase === '1') { pctC = 0.25; pctK = 0.50; pctJ = 0.25; }
+  else { pctC = 0; pctK = 0.70; pctJ = 0.30; }
+
+  const colArs = Math.max(0, excedente) * pctC;
+  const casArs = Math.max(0, excedente) * pctK;
+  const jubArs = Math.max(0, excedente) * pctJ;
+
+  const row = {
+    año: parseInt(year),
+    mes: mes,
+    ingresoARS: ingreso,
+    gastosARS: gastos,
+    excedenteARS: excedente,
+    mep: mep,
+    excedenteUSD: excedente / mep,
+    colchonUSD: colArs / mep,
+    casaUSD: casArs / mep,
+    jubilacionUSD: jubArs / mep,
+    fase: parseInt(fase),
+    fecha: new Date().toISOString().slice(0, 10),
+    notas: ''
+  };
+
+  addHistoricoRow(row);
+  showToast(`Registrado ${mes} ${year} en histórico`, 'success');
+  renderHistoricoView();
+  // Cambiar a la pestaña Histórico
+  document.querySelector('[data-tab="historico"]').click();
+});
+
+/* =====================================================
+   HISTÓRICO (Tab 3)
+   ===================================================== */
+function renderHistoricoView() {
+  if (!workbook) return;
+  const rows = readHistorico();
+
+  // Orden cronológico
+  rows.sort((a, b) => {
+    if (a.año !== b.año) return a.año - b.año;
+    return MESES.indexOf(a.mes) - MESES.indexOf(b.mes);
+  });
+
+  // Acumulados
+  let accC = 0, accK = 0, accJ = 0;
+  const rowsWithAcc = rows.map(r => {
+    accC += r.colchonUSD;
+    accK += r.casaUSD;
+    accJ += r.jubilacionUSD;
+    return { ...r, accC, accK, accJ };
+  });
+
+  // Summary cards
+  document.getElementById('hist-colchon').textContent = formatUSD(accC);
+  document.getElementById('hist-colchon-sub').textContent = `${rows.length} aporte${rows.length !== 1 ? 's' : ''}`;
+  document.getElementById('hist-casa').textContent = formatUSD(accK);
+  document.getElementById('hist-casa-sub').textContent = `${rows.length} aporte${rows.length !== 1 ? 's' : ''}`;
+  document.getElementById('hist-jubilacion').textContent = formatUSD(accJ);
+  document.getElementById('hist-jubilacion-sub').textContent = `${rows.length} aporte${rows.length !== 1 ? 's' : ''}`;
+
+  // Tabla
+  const tbody = document.getElementById('historico-tbody');
+  tbody.innerHTML = '';
+
+  document.getElementById('historico-empty').style.display = rows.length === 0 ? 'block' : 'none';
+
+  rowsWithAcc.forEach((r, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.año}</td>
+      <td>${r.mes}</td>
+      <td>${formatARS(r.ingresoARS)}</td>
+      <td>${formatARS(r.gastosARS)}</td>
+      <td>${formatARS(r.excedenteARS)}</td>
+      <td>${formatNumberAR(r.mep)}</td>
+      <td>${formatUSD(r.colchonUSD)}</td>
+      <td>${formatUSD(r.casaUSD)}</td>
+      <td>${formatUSD(r.jubilacionUSD)}</td>
+      <td class="acumulado">${formatUSD(r.accC)}</td>
+      <td class="acumulado">${formatUSD(r.accK)}</td>
+      <td class="acumulado">${formatUSD(r.accJ)}</td>
+      <td></td>
+    `;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'remove-row';
+    delBtn.textContent = '×';
+    delBtn.title = 'Eliminar registro';
+    delBtn.addEventListener('click', () => {
+      if (confirm(`¿Eliminar el registro de ${r.mes} ${r.año}?`)) {
+        deleteHistoricoRow(idx);
+        renderHistoricoView();
+      }
+    });
+    tr.lastElementChild.appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+
+  renderLineChart(rowsWithAcc);
+}
+
+function renderLineChart(rowsWithAcc) {
+  const svg = document.getElementById('line-chart');
+  svg.innerHTML = '';
+  const W = 800, H = 280, P = 40;
+
+  if (rowsWithAcc.length === 0) {
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', W / 2);
+    text.setAttribute('y', H / 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('fill', '#9ca3af');
+    text.textContent = 'Sin datos todavía';
+    svg.appendChild(text);
+    return;
+  }
+
+  const maxVal = Math.max(...rowsWithAcc.map(r => r.accC + r.accK + r.accJ), 1);
+  const stepX = rowsWithAcc.length > 1 ? (W - 2 * P) / (rowsWithAcc.length - 1) : 0;
+
+  // Eje Y - grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = P + ((H - 2 * P) * i) / 4;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', P); line.setAttribute('x2', W - P);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#e5e7eb'); line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+
+    const value = maxVal * (1 - i / 4);
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', P - 6);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('fill', '#9ca3af');
+    label.setAttribute('font-size', '11');
+    label.textContent = formatUSDCompact(value);
+    svg.appendChild(label);
+  }
+
+  // Etiquetas X
+  rowsWithAcc.forEach((r, i) => {
+    const x = P + stepX * i;
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', x);
+    label.setAttribute('y', H - P + 16);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('fill', '#6b7280');
+    label.setAttribute('font-size', '10');
+    label.textContent = MESES_CORTOS[MESES.indexOf(r.mes)] + ' ' + String(r.año).slice(-2);
+    svg.appendChild(label);
+  });
+
+  // Series
+  const series = [
+    { color: '#f59e0b', getter: r => r.accC },
+    { color: '#10b981', getter: r => r.accK },
+    { color: '#8b5cf6', getter: r => r.accJ },
+    { color: '#1e3a8a', getter: r => r.accC + r.accK + r.accJ, width: 2.5 }
+  ];
+
+  series.forEach(s => {
+    const pts = rowsWithAcc.map((r, i) => {
+      const x = P + stepX * i;
+      const y = H - P - ((s.getter(r) / maxVal) * (H - 2 * P));
+      return [x, y];
+    });
+    const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('d', path);
+    line.setAttribute('stroke', s.color);
+    line.setAttribute('stroke-width', s.width || 1.8);
+    line.setAttribute('fill', 'none');
+    svg.appendChild(line);
+
+    pts.forEach(([x, y]) => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', x); c.setAttribute('cy', y);
+      c.setAttribute('r', 3); c.setAttribute('fill', s.color);
+      svg.appendChild(c);
+    });
+  });
+}
+
+/* =====================================================
+   TABS
+   ===================================================== */
+function showTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(el => {
+    if (el.id === 'empty-state') return;
+    el.classList.add('hidden');
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  const target = document.getElementById('tab-' + tabName);
+  if (target) target.classList.remove('hidden');
+  const btn = document.querySelector(`[data-tab="${tabName}"]`);
+  if (btn) btn.classList.add('active');
+
+  if (tabName === 'historico') renderHistoricoView();
+  if (tabName === 'calc') renderCalcYearSelect();
+}
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => showTab(b.dataset.tab));
+});
+
+document.getElementById('goto-calc').addEventListener('click', e => {
+  e.preventDefault();
+  showTab('calc');
+});
+
+/* =====================================================
+   RADIO BUTTONS de la calculadora
+   ===================================================== */
+function actualizarRadios() {
+  document.querySelectorAll('.radio-label').forEach(label => {
+    const inp = label.querySelector('input[type="radio"]');
+    if (inp.checked) label.classList.add('selected');
+    else label.classList.remove('selected');
+  });
+}
+document.querySelectorAll('input[name="fase"]').forEach(el => {
+  el.addEventListener('change', () => { actualizarRadios(); calcular(); });
+});
+
+['ingreso', 'mep'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', calcular);
+  el.addEventListener('blur', () => {
+    const n = parseARS(el.value);
+    el.value = n > 0 ? formatNumberAR(n) : '';
+  });
+});
+
+/* =====================================================
+   BUTTONS de conexión
+   ===================================================== */
+document.getElementById('connect-btn').addEventListener('click', connectFile);
+document.getElementById('empty-connect').addEventListener('click', async () => {
+  // Si ya hay handle, reconectar; si no, conectar uno nuevo
+  if (fileHandle) await reconnectFile();
+  else await connectFile();
+});
+document.getElementById('reconnect-btn').addEventListener('click', reconnectFile);
+document.getElementById('disconnect-btn').addEventListener('click', () => {
+  if (confirm('¿Desconectar el Excel? La app se va a quedar sin datos hasta que vuelvas a conectar uno.')) {
+    disconnectFile();
+  }
+});
+
+/* =====================================================
+   RENDER ALL
+   ===================================================== */
+function renderAll() {
+  if (!workbook) return;
+  renderGastosView();
+  renderCalcYearSelect();
+  renderDeducciones();
+  calcular();
+  renderHistoricoView();
+}
+
+/* =====================================================
+   INIT
+   ===================================================== */
+async function init() {
+  if (!fsaaSupported()) {
+    document.getElementById('empty-state').innerHTML = `
+      <h2 style="color:#dc2626;">Navegador no soportado</h2>
+      <p>Esta app necesita la File System Access API, que solo está disponible en Chrome y Edge (versión 86+).</p>
+      <p>Estás usando un navegador que no la soporta. Probá con Chrome o Edge.</p>
+    `;
+    return;
+  }
+
+  actualizarRadios();
+  calcular();
+
+  // Intentar restaurar handle previo
+  const handle = await loadHandleFromIDB();
+  if (handle) {
+    fileHandle = handle;
+    updateConnectionUI();
+    setStatus('', 'Esperando reconexión');
+  } else {
+    updateConnectionUI();
+  }
+
+  // Tab inicial
+  showTab('gastos');
+
+  // Default mes en selector calc
+  document.getElementById('calc-mes-select').value = MESES[new Date().getMonth()];
+}
+
+init();
+
+</script>
+</body>
+</html>

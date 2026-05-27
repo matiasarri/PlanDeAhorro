@@ -677,6 +677,45 @@
 
   .hidden { display: none !important; }
 
+  /* ========== IOL Inversiones ========== */
+  .iol-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .iol-error-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: help;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .iol-frasco-select {
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.82em;
+    font-family: inherit;
+    background: white;
+    cursor: pointer;
+    min-width: 100px;
+  }
+  .iol-frasco-select.colchon { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+  .iol-frasco-select.casa { border-color: #10b981; background: #d1fae5; color: #065f46; }
+  .iol-frasco-select.jubilacion { border-color: #8b5cf6; background: #ede9fe; color: #6b21a8; }
+  .iol-positive { color: #059669; font-weight: 600; }
+  .iol-negative { color: #dc2626; font-weight: 600; }
+
   /* Loader */
   .loader {
     border: 3px solid #f3f4f6;
@@ -753,6 +792,7 @@
       <button class="tab-btn active" data-tab="gastos">Gastos</button>
       <button class="tab-btn" data-tab="calc">Calculadora</button>
       <button class="tab-btn" data-tab="historico">Histórico</button>
+      <button class="tab-btn" data-tab="inversiones">Inversiones</button>
     </nav>
 
     <!-- Tab: Gastos -->
@@ -966,6 +1006,164 @@
           Todavía no registraste ningún mes. Andá a la <a href="#" id="goto-calc">Calculadora</a>,
           completá los parámetros y apretá "Registrar este mes en histórico".
         </div>
+      </div>
+    </section>
+
+    <!-- ========== Tab: Inversiones (IOL) ========== -->
+    <section id="tab-inversiones" class="tab-content hidden">
+
+      <!-- Loader durante sync -->
+      <div id="iol-loading" class="hidden" style="text-align: center; padding: 40px;">
+        <div class="loader"></div>
+        <p style="margin-top: 12px; color: #6b7280;">Sincronizando con IOL...</p>
+      </div>
+
+      <!-- Estado: NO conectado -->
+      <div id="iol-not-connected" class="hidden">
+        <div class="panel" style="max-width: 480px; margin: 40px auto;">
+          <h3 style="margin-bottom: 8px;">Conectar tu cuenta de IOL</h3>
+          <p style="color: #6b7280; font-size: 0.9em; margin-bottom: 20px;">
+            Solo lectura. La app no opera, solo consulta tu portafolio.<br>
+            Tus credenciales se guardan encriptadas (AES-256) en Supabase.
+          </p>
+
+          <div id="iol-connect-error" class="auth-error hidden"></div>
+
+          <div class="calc-field">
+            <label for="iol-username">Usuario IOL</label>
+            <input type="text" id="iol-username" autocomplete="username">
+          </div>
+          <div class="calc-field">
+            <label for="iol-password">Contraseña IOL</label>
+            <input type="password" id="iol-password" autocomplete="current-password">
+          </div>
+
+          <button id="iol-connect-btn" class="auth-btn" style="margin-top: 12px;">Conectar</button>
+
+          <p style="font-size: 0.78em; color: #9ca3af; margin-top: 14px;">
+            Necesitás tener las APIs habilitadas en IOL → Mi Cuenta → Personalización → APIs.
+          </p>
+        </div>
+      </div>
+
+      <!-- Estado: conectado -->
+      <div id="iol-dashboard" class="hidden">
+
+        <!-- Header con estado de conexión -->
+        <div class="panel iol-status-row">
+          <div>
+            <strong>IOL conectado:</strong> <span id="iol-username-display"></span>
+            <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
+              <span id="iol-last-sync">Sin sincronizar todavía</span>
+              <span id="iol-error-icon" class="iol-error-icon hidden" title="">!</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="iol-refresh-btn" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px;">Refrescar</button>
+            <button id="iol-disconnect-btn" class="btn-ghost" style="color: #dc2626; border-color: #dc2626;">Desconectar</button>
+          </div>
+        </div>
+
+        <!-- Resumen summary cards -->
+        <div class="historico-summary">
+          <div class="summary-card" style="border-color: #1e3a8a;">
+            <div class="label">Total valorizado USD</div>
+            <div class="value" id="iol-total-usd">USD 0</div>
+          </div>
+          <div class="summary-card" style="border-color: #10b981;">
+            <div class="label">Total valorizado ARS</div>
+            <div class="value" id="iol-total-ars">$0</div>
+          </div>
+          <div class="summary-card" style="border-color: #8b5cf6;">
+            <div class="label">Ganancia / Pérdida</div>
+            <div class="value" id="iol-ganancia">0%</div>
+            <div class="sub" id="iol-ganancia-monto">USD 0</div>
+          </div>
+        </div>
+
+        <!-- Resumen por frasco -->
+        <div class="panel">
+          <h3>Por frasco</h3>
+          <div class="historico-summary">
+            <div class="summary-card colchon">
+              <div class="label">Colchón</div>
+              <div class="value" id="iol-frasco-colchon">USD 0</div>
+              <div class="sub" id="iol-frasco-colchon-count">0 instrumentos</div>
+            </div>
+            <div class="summary-card casa">
+              <div class="label">Frasco Casa</div>
+              <div class="value" id="iol-frasco-casa">USD 0</div>
+              <div class="sub" id="iol-frasco-casa-count">0 instrumentos</div>
+            </div>
+            <div class="summary-card jubilacion">
+              <div class="label">Frasco Jubilación</div>
+              <div class="value" id="iol-frasco-jubilacion">USD 0</div>
+              <div class="sub" id="iol-frasco-jubilacion-count">0 instrumentos</div>
+            </div>
+            <div class="summary-card" style="border-color: #9ca3af;">
+              <div class="label">Sin asignar</div>
+              <div class="value" id="iol-frasco-libre">USD 0</div>
+              <div class="sub" id="iol-frasco-libre-count">0 instrumentos</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de posiciones -->
+        <div class="panel">
+          <h3>Posiciones</h3>
+          <div style="overflow-x: auto;">
+            <table class="historico-table" id="iol-positions-table">
+              <thead>
+                <tr>
+                  <th>Símbolo</th>
+                  <th>Descripción</th>
+                  <th>País</th>
+                  <th>Cantidad</th>
+                  <th>PPC</th>
+                  <th>Último</th>
+                  <th>Valorizado</th>
+                  <th>USD ≈</th>
+                  <th>Gan. %</th>
+                  <th>Frasco</th>
+                </tr>
+              </thead>
+              <tbody id="iol-positions-tbody"></tbody>
+              <tfoot>
+                <tr id="iol-positions-totals" class="totals-row"></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div id="iol-positions-empty" class="info-box hidden" style="margin-top: 12px;">
+            No hay posiciones en tu cuenta de IOL.
+          </div>
+        </div>
+
+        <!-- Saldos por cuenta -->
+        <div class="panel">
+          <h3>Saldos por cuenta</h3>
+          <div style="overflow-x: auto;">
+            <table class="historico-table" id="iol-balances-table">
+              <thead>
+                <tr>
+                  <th>Cuenta</th>
+                  <th>Tipo</th>
+                  <th>Moneda</th>
+                  <th>Disponible</th>
+                  <th>Saldo</th>
+                  <th>Títulos val.</th>
+                  <th>Total</th>
+                  <th>Total USD</th>
+                  <th>Total ARS</th>
+                </tr>
+              </thead>
+              <tbody id="iol-balances-tbody"></tbody>
+              <tfoot>
+                <tr id="iol-balances-totals" class="totals-row"></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
       </div>
     </section>
   </div>
@@ -1290,6 +1488,7 @@ function showTab(tabName) {
 
   if (tabName === 'historico') loadAndRenderHistorico();
   if (tabName === 'calc') renderCalcYearSelect();
+  if (tabName === 'inversiones') loadAndRenderIol();
 }
 
 document.querySelectorAll('.tab-btn').forEach(b => {
@@ -1944,6 +2143,421 @@ async function initApp() {
     showLoader(false);
   }
 }
+
+/* =====================================================
+   IOL — Inversiones (Fase 1)
+   ===================================================== */
+let iolState = {
+  connected: false,
+  username: null,
+  positions: [],
+  balances: [],
+  snapshot_at: null,
+  last_sync_at: null,
+  last_sync_error: null,
+  mapping: {},   // simbolo -> frasco
+  mepRate: 1500  // MEP para conversión ARS→USD, se lee de user_config
+};
+
+async function callIolProxy(action, params = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error('No hay sesión activa');
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/iol-proxy`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action, params })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+    err.code = data.error;
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+function showIolView(view) {
+  document.getElementById('iol-loading').classList.toggle('hidden', view !== 'loading');
+  document.getElementById('iol-not-connected').classList.toggle('hidden', view !== 'not-connected');
+  document.getElementById('iol-dashboard').classList.toggle('hidden', view !== 'dashboard');
+}
+
+function relativeTime(isoDate) {
+  if (!isoDate) return 'nunca';
+  const now = Date.now();
+  const then = new Date(isoDate).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return 'hace unos segundos';
+  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff / 3600)}h`;
+  if (diff < 86400 * 30) return `hace ${Math.floor(diff / 86400)} día${Math.floor(diff/86400) > 1 ? 's' : ''}`;
+  return new Date(isoDate).toLocaleDateString('es-AR');
+}
+
+async function fetchIolMapping() {
+  if (!currentUser) return {};
+  const { data, error } = await sb.from('iol_frasco_mapping').select('simbolo, frasco').eq('user_id', currentUser.id);
+  if (error) { console.error(error); return {}; }
+  const map = {};
+  data.forEach(r => { map[r.simbolo] = r.frasco; });
+  return map;
+}
+
+async function setIolMapping(simbolo, frasco) {
+  if (!currentUser) return;
+  if (!frasco) {
+    await sb.from('iol_frasco_mapping').delete().eq('user_id', currentUser.id).eq('simbolo', simbolo);
+    delete iolState.mapping[simbolo];
+  } else {
+    await sb.from('iol_frasco_mapping').upsert({
+      user_id: currentUser.id,
+      simbolo: simbolo,
+      frasco: frasco
+    });
+    iolState.mapping[simbolo] = frasco;
+  }
+  renderIolFrascoSummary();
+}
+
+async function loadAndRenderIol() {
+  showIolView('loading');
+  try {
+    const [portfolio, mapping, cfg] = await Promise.all([
+      callIolProxy('get_latest_portfolio'),
+      fetchIolMapping(),
+      fetchUserConfig()
+    ]);
+    iolState = {
+      ...iolState,
+      ...portfolio,
+      mapping,
+      mepRate: (cfg?.default_mep) || 1500
+    };
+    if (!portfolio.connected) {
+      showIolView('not-connected');
+    } else {
+      showIolView('dashboard');
+      renderIolDashboard();
+    }
+  } catch (err) {
+    showIolView('not-connected');
+    showToast('Error cargando inversiones: ' + err.message, 'error');
+  }
+}
+
+function renderIolDashboard() {
+  document.getElementById('iol-username-display').textContent = iolState.username || '';
+
+  const lastSyncEl = document.getElementById('iol-last-sync');
+  if (iolState.last_sync_at) {
+    lastSyncEl.textContent = 'Última sincronización: ' + relativeTime(iolState.last_sync_at);
+  } else {
+    lastSyncEl.textContent = 'Sin sincronizar todavía';
+  }
+
+  const errorIcon = document.getElementById('iol-error-icon');
+  if (iolState.last_sync_error) {
+    errorIcon.classList.remove('hidden');
+    errorIcon.title = 'Última sync falló: ' + iolState.last_sync_error;
+  } else {
+    errorIcon.classList.add('hidden');
+    errorIcon.title = '';
+  }
+
+  // Calcular totales unificados a USD usando MEP
+  // - Posiciones en USD (bonos AL35D, etc.): valorizado ya en USD
+  // - Posiciones en ARS (CEDEARs como SPYD, QQQD): valorizado en pesos, dividir por MEP
+  const mep = iolState.mepRate || 1500;
+  let totalUSD = 0, totalARSFace = 0, gananciaUSD = 0, costoUSD = 0;
+  for (const p of iolState.positions) {
+    const val = parseFloat(p.valorizado) || 0;
+    const gan = parseFloat(p.ganancia_dinero) || 0;
+    const ppc = parseFloat(p.ppc) || 0;
+    const cant = parseFloat(p.cantidad) || 0;
+    const costo = ppc * cant;
+    if (p.moneda === 'dolar_Estadounidense') {
+      totalUSD += val;
+      gananciaUSD += gan;
+      costoUSD += costo;
+    } else {
+      // ARS → USD via MEP
+      totalUSD += val / mep;
+      totalARSFace += val;
+      gananciaUSD += gan / mep;
+      costoUSD += costo / mep;
+    }
+  }
+  // Sumar saldos disponibles (también convertidos a USD)
+  for (const b of iolState.balances) {
+    const disp = parseFloat(b.disponible) || 0;
+    if (b.moneda === 'dolar_Estadounidense') {
+      totalUSD += disp;
+    } else {
+      totalUSD += disp / mep;
+      totalARSFace += disp;
+    }
+  }
+
+  document.getElementById('iol-total-usd').textContent = formatUSD(totalUSD);
+  document.getElementById('iol-total-ars').textContent = formatARS(totalARSFace);
+
+  const ganPct = costoUSD > 0 ? (gananciaUSD / costoUSD) * 100 : 0;
+  const ganEl = document.getElementById('iol-ganancia');
+  const ganMontoEl = document.getElementById('iol-ganancia-monto');
+  ganEl.textContent = (ganPct >= 0 ? '+' : '') + ganPct.toFixed(1) + '%';
+  ganEl.className = 'value ' + (ganPct >= 0 ? 'iol-positive' : 'iol-negative');
+  ganMontoEl.textContent = (gananciaUSD >= 0 ? '+' : '') + formatUSD(gananciaUSD) + ` · MEP $${formatNumberAR(mep)}`;
+
+  renderIolPositions();
+  renderIolBalances();
+  renderIolFrascoSummary();
+}
+
+function renderIolPositions() {
+  const tbody = document.getElementById('iol-positions-tbody');
+  const totalsRow = document.getElementById('iol-positions-totals');
+  tbody.innerHTML = '';
+  totalsRow.innerHTML = '';
+
+  if (iolState.positions.length === 0) {
+    document.getElementById('iol-positions-empty').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('iol-positions-empty').classList.add('hidden');
+
+  const mep = iolState.mepRate || 1500;
+  let grandTotalUSD = 0;
+  let grandTotalARS = 0;
+  let totalCostoUSD = 0;
+  let totalGananciaUSD = 0;
+
+  iolState.positions.forEach(p => {
+    const tr = document.createElement('tr');
+
+    const ganPct = parseFloat(p.ganancia_porcentaje) || 0;
+    const ganClass = ganPct >= 0 ? 'iol-positive' : 'iol-negative';
+    const ganText = (ganPct >= 0 ? '+' : '') + ganPct.toFixed(1) + '%';
+
+    const monedaSymbol = p.moneda === 'dolar_Estadounidense' ? 'US$' : '$';
+    const fmtNum = v => formatNumberAR(parseFloat(v) || 0);
+    const val = parseFloat(p.valorizado) || 0;
+    const valUsd = p.moneda === 'dolar_Estadounidense' ? val : val / mep;
+    const valArs = p.moneda === 'dolar_Estadounidense' ? val * mep : val;
+
+    // Acumular en totales
+    grandTotalUSD += valUsd;
+    grandTotalARS += valArs;
+    const gan = parseFloat(p.ganancia_dinero) || 0;
+    const ppc = parseFloat(p.ppc) || 0;
+    const cant = parseFloat(p.cantidad) || 0;
+    const costo = ppc * cant;
+    if (p.moneda === 'dolar_Estadounidense') {
+      totalGananciaUSD += gan;
+      totalCostoUSD += costo;
+    } else {
+      totalGananciaUSD += gan / mep;
+      totalCostoUSD += costo / mep;
+    }
+
+    tr.innerHTML = `
+      <td><strong>${p.simbolo || ''}</strong></td>
+      <td style="font-size: 0.85em; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.descripcion || ''}</td>
+      <td>${p.pais === 'estados_Unidos' ? 'USA' : 'AR'}</td>
+      <td>${fmtNum(p.cantidad)}</td>
+      <td>${monedaSymbol} ${fmtNum(p.ppc)}</td>
+      <td>${monedaSymbol} ${fmtNum(p.ultimo_precio)}</td>
+      <td><strong>${monedaSymbol} ${fmtNum(val)}</strong></td>
+      <td style="color:#1e3a8a;">${formatUSD(valUsd)}</td>
+      <td class="${ganClass}">${ganText}</td>
+      <td></td>
+    `;
+
+    // Frasco selector
+    const select = document.createElement('select');
+    select.className = 'iol-frasco-select';
+    select.innerHTML = `
+      <option value="">— Sin asignar —</option>
+      <option value="colchon">Colchón</option>
+      <option value="casa">Frasco Casa</option>
+      <option value="jubilacion">Frasco Jubilación</option>
+    `;
+    const currentFrasco = iolState.mapping[p.simbolo] || '';
+    select.value = currentFrasco;
+    if (currentFrasco) select.classList.add(currentFrasco);
+
+    select.addEventListener('change', async (e) => {
+      const newFrasco = e.target.value;
+      select.classList.remove('colchon', 'casa', 'jubilacion');
+      if (newFrasco) select.classList.add(newFrasco);
+      await setIolMapping(p.simbolo, newFrasco || null);
+    });
+
+    tr.lastElementChild.appendChild(select);
+    tbody.appendChild(tr);
+  });
+
+  // Fila de totales
+  const totalGanPct = totalCostoUSD > 0 ? (totalGananciaUSD / totalCostoUSD) * 100 : 0;
+  const ganClass = totalGanPct >= 0 ? 'iol-positive' : 'iol-negative';
+  const ganText = (totalGanPct >= 0 ? '+' : '') + totalGanPct.toFixed(1) + '%';
+  totalsRow.innerHTML = `
+    <td colspan="6" class="totals-label">TOTAL POSICIONES (al MEP $${formatNumberAR(mep)})</td>
+    <td><strong>${formatARS(grandTotalARS)}</strong></td>
+    <td class="grand-total"><strong>${formatUSD(grandTotalUSD)}</strong></td>
+    <td class="${ganClass}"><strong>${ganText}</strong></td>
+    <td></td>
+  `;
+}
+
+function renderIolBalances() {
+  const tbody = document.getElementById('iol-balances-tbody');
+  tbody.innerHTML = '';
+
+  const tipoLabels = {
+    inversion_Argentina_Pesos: 'Inversión AR$',
+    inversion_Argentina_Dolares: 'Inversión USD',
+    inversion_Estados_Unidos_Dolares: 'Inversión USA',
+    administrada_Argentina_Pesos: 'Administrada AR$',
+    administrada_Argentina_Dolares: 'Administrada USD',
+    administrada_Estados_Unidos_Dolares: 'Administrada USA'
+  };
+  const monedaLabels = {
+    peso_Argentino: 'ARS',
+    dolar_Estadounidense: 'USD'
+  };
+
+  const mep = iolState.mepRate || 1500;
+  let grandTotalUSD = 0;
+  let grandTotalARS = 0;
+
+  iolState.balances.forEach(b => {
+    const isUSD = b.moneda === 'dolar_Estadounidense';
+    const fmt = v => isUSD ? formatUSD(v) : formatARS(v);
+    const total = parseFloat(b.total) || 0;
+    const totalUSD = isUSD ? total : total / mep;
+    const totalARS = isUSD ? total * mep : total;
+    grandTotalUSD += totalUSD;
+    grandTotalARS += totalARS;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${b.cuenta_numero || ''}</td>
+      <td>${tipoLabels[b.cuenta_tipo] || b.cuenta_tipo || ''}</td>
+      <td>${monedaLabels[b.moneda] || b.moneda || ''}</td>
+      <td>${fmt(b.disponible || 0)}</td>
+      <td>${fmt(b.saldo || 0)}</td>
+      <td>${fmt(b.titulos_valorizados || 0)}</td>
+      <td><strong>${fmt(total)}</strong></td>
+      <td>${formatUSD(totalUSD)}</td>
+      <td>${formatARS(totalARS)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Fila de totales (también sumando títulos valorizados de las posiciones)
+  // Las posiciones agregan al patrimonio total más allá de lo que viene en `total` de cada cuenta
+  // (en realidad `titulos_valorizados` ya está en el total de la cuenta correspondiente, así que no se duplica).
+  const totalsRow = document.getElementById('iol-balances-totals');
+  totalsRow.innerHTML = `
+    <td colspan="7" class="totals-label">TOTAL (al MEP $${formatNumberAR(mep)})</td>
+    <td class="grand-total"><strong>${formatUSD(grandTotalUSD)}</strong></td>
+    <td class="grand-total"><strong>${formatARS(grandTotalARS)}</strong></td>
+  `;
+}
+
+function renderIolFrascoSummary() {
+  const mep = iolState.mepRate || 1500;
+  const sums = { colchon: 0, casa: 0, jubilacion: 0, libre: 0 };
+  const counts = { colchon: 0, casa: 0, jubilacion: 0, libre: 0 };
+  for (const p of iolState.positions) {
+    const val = parseFloat(p.valorizado) || 0;
+    // Convertir todo a USD: si está en pesos, dividir por MEP
+    const valUsd = p.moneda === 'dolar_Estadounidense' ? val : val / mep;
+    const frasco = iolState.mapping[p.simbolo] || 'libre';
+    sums[frasco] = (sums[frasco] || 0) + valUsd;
+    counts[frasco] = (counts[frasco] || 0) + 1;
+  }
+  document.getElementById('iol-frasco-colchon').textContent = formatUSD(sums.colchon);
+  document.getElementById('iol-frasco-colchon-count').textContent = counts.colchon + ' instrumento' + (counts.colchon !== 1 ? 's' : '');
+  document.getElementById('iol-frasco-casa').textContent = formatUSD(sums.casa);
+  document.getElementById('iol-frasco-casa-count').textContent = counts.casa + ' instrumento' + (counts.casa !== 1 ? 's' : '');
+  document.getElementById('iol-frasco-jubilacion').textContent = formatUSD(sums.jubilacion);
+  document.getElementById('iol-frasco-jubilacion-count').textContent = counts.jubilacion + ' instrumento' + (counts.jubilacion !== 1 ? 's' : '');
+  document.getElementById('iol-frasco-libre').textContent = formatUSD(sums.libre);
+  document.getElementById('iol-frasco-libre-count').textContent = counts.libre + ' instrumento' + (counts.libre !== 1 ? 's' : '');
+}
+
+// Connect
+document.getElementById('iol-connect-btn').addEventListener('click', async () => {
+  const username = document.getElementById('iol-username').value.trim();
+  const password = document.getElementById('iol-password').value;
+  const errEl = document.getElementById('iol-connect-error');
+  errEl.classList.add('hidden');
+
+  if (!username || !password) {
+    errEl.textContent = 'Ingresá usuario y contraseña.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.getElementById('iol-connect-btn');
+  btn.disabled = true;
+  btn.textContent = 'Conectando...';
+
+  try {
+    await callIolProxy('connect', { username, password });
+    document.getElementById('iol-password').value = '';
+    showToast('Conectado a IOL. Sincronizando...', 'success');
+    await callIolProxy('sync_portfolio');
+    await loadAndRenderIol();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Conectar';
+  }
+});
+
+// Refresh
+document.getElementById('iol-refresh-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('iol-refresh-btn');
+  btn.disabled = true;
+  btn.textContent = 'Refrescando...';
+  try {
+    await callIolProxy('sync_portfolio');
+    showToast('Portafolio actualizado', 'success');
+    await loadAndRenderIol();
+  } catch (err) {
+    // No cambiamos vista — mantenemos el último snapshot visible
+    // Mostramos el error icon
+    iolState.last_sync_error = err.message;
+    renderIolDashboard();
+    showToast('Error al refrescar: ' + err.message + ' (mostrando último snapshot)', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Refrescar';
+  }
+});
+
+// Disconnect
+document.getElementById('iol-disconnect-btn').addEventListener('click', async () => {
+  if (!confirm('¿Desconectar IOL? Esto borra tus credenciales y snapshots locales (no afecta tu cuenta en IOL).')) return;
+  try {
+    await callIolProxy('disconnect');
+    iolState = { connected: false, positions: [], balances: [], snapshot_at: null, mapping: {} };
+    showIolView('not-connected');
+    document.getElementById('iol-username').value = '';
+    showToast('Desconectado de IOL', 'success');
+  } catch (err) {
+    showToast('Error al desconectar: ' + err.message, 'error');
+  }
+});
 
 // PWA: registrar service worker si está disponible
 if ('serviceWorker' in navigator) {

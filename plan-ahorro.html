@@ -1,0 +1,2127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Ahorro Personal</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    color: #1a1a1a;
+    background: #f5f7fa;
+    padding: 20px;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    padding: 40px 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+  }
+  header h1 { font-size: 2.2em; margin-bottom: 8px; }
+  header .subtitle { opacity: 0.9; font-size: 1.1em; }
+
+  nav {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  nav a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95em;
+  }
+  nav a:hover { text-decoration: underline; }
+
+  section {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  section h2 {
+    color: #1e3a8a;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    font-size: 1.6em;
+  }
+  section h3 {
+    color: #1e40af;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    font-size: 1.25em;
+  }
+  section h4 {
+    color: #374151;
+    margin-top: 15px;
+    margin-bottom: 8px;
+    font-size: 1.05em;
+  }
+
+  p { margin-bottom: 12px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 0.95em;
+  }
+  th {
+    background: #1e3a8a;
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  tr:hover { background: #f9fafb; }
+
+  .frasco {
+    border-left: 5px solid;
+    padding: 20px 25px;
+    margin: 20px 0;
+    background: #fafbfc;
+    border-radius: 0 8px 8px 0;
+  }
+  .frasco.operativa { border-color: #6b7280; }
+  .frasco.colchon { border-color: #f59e0b; }
+  .frasco.casa { border-color: #10b981; }
+  .frasco.jubilacion { border-color: #8b5cf6; }
+
+  .frasco-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: white;
+  }
+  .badge.operativa { background: #6b7280; }
+  .badge.colchon { background: #f59e0b; }
+  .badge.casa { background: #10b981; }
+  .badge.jubilacion { background: #8b5cf6; }
+
+  .info-box {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .warning-box {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .danger-box {
+    background: #fee2e2;
+    border-left: 4px solid #dc2626;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .success-box {
+    background: #d1fae5;
+    border-left: 4px solid #10b981;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .step-list {
+    counter-reset: step;
+    list-style: none;
+    padding-left: 0;
+  }
+  .step-list li {
+    counter-increment: step;
+    padding: 15px 15px 15px 60px;
+    position: relative;
+    margin-bottom: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+  }
+  .step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: #1e3a8a;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  ul, ol { padding-left: 25px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; }
+
+  .concept-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 15px;
+  }
+  .concept-card strong.term {
+    color: #1e3a8a;
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .number-highlight {
+    font-weight: 700;
+    color: #1e3a8a;
+  }
+  .positive { color: #059669; font-weight: 600; }
+  .negative { color: #dc2626; font-weight: 600; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 700px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.6em; }
+  }
+
+  .footnote {
+    font-size: 0.85em;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 15px;
+  }
+
+  details {
+    background: #f9fafb;
+    padding: 12px 18px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  details summary {
+    font-weight: 600;
+    color: #1e3a8a;
+  }
+  details[open] summary { margin-bottom: 10px; }
+
+  .disclaimer {
+    background: #1f2937;
+    color: #d1d5db;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    margin-top: 30px;
+  }
+  .disclaimer strong { color: white; }
+
+  /* Calculator */
+  .calc-container {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+  }
+  .calc-inputs {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 25px;
+  }
+  .calc-field label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+  .calc-field input[type="number"],
+  .calc-field input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1.05em;
+    font-family: inherit;
+    background: white;
+  }
+  .calc-field input[type="number"]:focus,
+  .calc-field input[type="text"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  .calc-field small {
+    display: block;
+    color: #6b7280;
+    font-size: 0.85em;
+    margin-top: 4px;
+  }
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .radio-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    transition: border-color 0.15s, background 0.15s;
+    font-weight: 400;
+  }
+  .radio-label:hover { border-color: #9ca3af; }
+  .radio-label.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+  .radio-label input { margin-top: 4px; flex-shrink: 0; }
+  .calc-results {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-top: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .calc-results h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    color: #1e3a8a;
+  }
+  .calc-results h4 {
+    margin-top: 5px;
+    margin-bottom: 12px;
+  }
+  .calc-excedente {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    padding: 22px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  .calc-excedente .calc-label {
+    font-size: 0.95em;
+    opacity: 0.9;
+    margin-bottom: 6px;
+  }
+  .calc-excedente .calc-value {
+    font-size: 1.9em;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .calc-excedente .calc-sub {
+    font-size: 1.05em;
+    opacity: 0.9;
+    margin-top: 4px;
+  }
+  .calc-distribucion {
+    display: grid;
+    gap: 12px;
+  }
+  .calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9fafb;
+    padding: 15px 18px;
+    border-radius: 8px;
+    border-left: 5px solid;
+    gap: 15px;
+  }
+  .calc-row.colchon { border-color: #f59e0b; }
+  .calc-row.casa { border-color: #10b981; }
+  .calc-row.jubilacion { border-color: #8b5cf6; }
+  .calc-row-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .calc-pct {
+    color: #6b7280;
+    font-size: 0.95em;
+    font-weight: 500;
+  }
+  .calc-row-value {
+    text-align: right;
+  }
+  .calc-row-value .calc-ars {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #1e3a8a;
+  }
+  .calc-row-value .calc-usd {
+    color: #6b7280;
+    font-size: 0.9em;
+    margin-top: 2px;
+  }
+
+  /* Deductions list */
+  .deducciones-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .deduccion-row {
+    display: grid;
+    grid-template-columns: 1fr 180px 36px;
+    gap: 8px;
+    align-items: center;
+  }
+  .deduccion-row input[type="text"],
+  .deduccion-row input[type="number"] {
+    padding: 8px 12px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95em;
+    font-family: inherit;
+    background: white;
+    width: 100%;
+  }
+  .deduccion-row input[type="text"]:focus,
+  .deduccion-row input[type="number"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  .remove-deduccion {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3em;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .remove-deduccion:hover {
+    background: #fecaca;
+  }
+  .add-button {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: 2px dashed #3b82f6;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 12px;
+    width: 100%;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .add-button:hover {
+    background: #dbeafe;
+  }
+  .deducciones-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .deducciones-total .total-amount {
+    color: #1e3a8a;
+    font-size: 1.1em;
+  }
+  @media (max-width: 600px) {
+    .deduccion-row {
+      grid-template-columns: 1fr 130px 36px;
+    }
+  }
+
+  /* Excedente color states */
+  .calc-excedente.blue {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  }
+  .calc-excedente.green {
+    background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+  }
+  .calc-excedente.red {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+  }
+  .calc-diff {
+    display: inline-block;
+    font-size: 0.78em;
+    margin-top: 10px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.18);
+    opacity: 0.95;
+    font-weight: 500;
+  }
+  .calc-diff:empty {
+    display: none;
+  }
+
+  /* ========== Gastos mensuales (sección 8) ========== */
+  .excel-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+  }
+  .upload-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .upload-button:hover { background: #059669; }
+  .action-button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .action-button:hover { background: #2563eb; }
+  .action-button.danger { background: #dc2626; }
+  .action-button.danger:hover { background: #b91c1c; }
+  .action-button.primary { background: #1e3a8a; }
+  .action-button.primary:hover { background: #1e40af; }
+  .year-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  .year-selector label {
+    font-weight: 600;
+    color: #374151;
+  }
+  .year-selector input {
+    width: 100px;
+    padding: 8px 12px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95em;
+    font-family: inherit;
+  }
+  .gastos-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+  }
+  .gastos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    margin: 0;
+    min-width: 1100px;
+  }
+  .gastos-table th {
+    background: #1e3a8a;
+    color: white;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+  .gastos-table th.col-concepto { text-align: left; min-width: 160px; }
+  .gastos-table th.col-codigo { text-align: left; min-width: 120px; }
+  .gastos-table th.col-total { background: #1e40af; }
+  .gastos-table td {
+    padding: 4px 4px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: right;
+  }
+  .gastos-table tbody tr:hover { background: #f9fafb; }
+  .cell-input {
+    width: 100%;
+    padding: 5px 7px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 0.92em;
+    font-family: inherit;
+    background: transparent;
+    text-align: right;
+  }
+  .cell-input.cell-text { text-align: left; }
+  .cell-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+  }
+  .cell-input:hover { background: #f3f4f6; }
+  .cell-input:focus:hover { background: white; }
+  .gastos-table .row-total {
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #f9fafb;
+    padding-right: 10px;
+  }
+  .remove-row {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    font-size: 1.1em;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0;
+    line-height: 1;
+  }
+  .remove-row:hover { background: #fecaca; }
+  .totals-row {
+    background: #eff6ff !important;
+    font-weight: 700;
+  }
+  .totals-row td {
+    padding: 10px 6px;
+    border-top: 2px solid #1e3a8a;
+    color: #1e3a8a;
+    text-align: right;
+  }
+  .totals-row .totals-label {
+    text-align: left !important;
+    padding-left: 10px;
+  }
+  .totals-row .grand-total {
+    background: #dbeafe;
+    color: #1e3a8a;
+    font-size: 1.05em;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+  }
+  .stat-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .stat-label {
+    color: #6b7280;
+    font-size: 0.85em;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .stat-value {
+    color: #1e3a8a;
+    font-size: 1.5em;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .stat-sub {
+    color: #6b7280;
+    font-size: 0.8em;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .chart-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 25px 20px 15px 20px;
+  }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 6px;
+    height: 240px;
+    padding: 25px 0 30px 0;
+    position: relative;
+  }
+  .bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    position: relative;
+    min-width: 40px;
+  }
+  .bar-fill {
+    width: 100%;
+    background: linear-gradient(180deg, #60a5fa 0%, #1e3a8a 100%);
+    border-radius: 6px 6px 0 0;
+    min-height: 2px;
+    transition: height 0.3s ease;
+  }
+  .bar:hover .bar-fill {
+    background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+  }
+  .bar-label {
+    position: absolute;
+    bottom: -22px;
+    font-size: 0.78em;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  .bar-value {
+    position: absolute;
+    top: -18px;
+    font-size: 0.72em;
+    color: #1e3a8a;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sync-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .mes-select {
+    padding: 10px 14px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-family: inherit;
+    background: white;
+    cursor: pointer;
+    min-width: 160px;
+  }
+  .mes-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+
+  @media (max-width: 700px) {
+    .gastos-table { font-size: 0.78em; }
+    .bar-chart { height: 180px; }
+    .bar-value { font-size: 0.65em; top: -16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Plan de Ahorro Personal</h1>
+  <p class="subtitle">Para alguien que arranca de cero en inversiones — paso a paso, sin tecnicismos.</p>
+</header>
+
+<nav>
+  <a href="#filosofia">1. Filosofía</a>
+  <a href="#rutina">2. Rutina mensual</a>
+  <a href="#frascos">3. Los 4 espacios</a>
+  <a href="#conceptos">4. Conceptos básicos</a>
+  <a href="#como-leer">5. Cómo leer las apps</a>
+  <a href="#cronograma">6. Cronograma 24 meses</a>
+  <a href="#calculadora">7. Calculadora</a>
+  <a href="#gastos">8. Gastos mensuales</a>
+  <a href="#reglas">9. Reglas de oro</a>
+  <a href="#errores">10. Errores a evitar</a>
+</nav>
+
+<section id="filosofia">
+  <h2>1. La filosofía: cuatro espacios, no una sola cuenta</h2>
+  <p>
+    La idea base es <strong>separar tu plata por objetivo</strong>. Cada peso o dólar tiene una misión.
+    Si todo está mezclado en la caja de ahorro, terminás gastando del ahorro o "tomando prestado" del fondo de la casa para algo que no era urgente.
+  </p>
+  <p>La separación física (cuentas distintas, apps distintas) hace el trabajo psicológico por vos.</p>
+
+  <table>
+    <thead>
+      <tr><th>Espacio</th><th>Para qué</th><th>Horizonte</th><th>Dónde</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Operativa</strong></td>
+        <td>Sueldo entra, gastos salen, pago TC</td>
+        <td>Días/semanas</td>
+        <td>Banco + Mercado Pago</td>
+      </tr>
+      <tr>
+        <td><strong>2. Colchón</strong></td>
+        <td>Emergencia (despido, salud, imprevistos)</td>
+        <td>No tocar nunca</td>
+        <td>Cocos Capital</td>
+      </tr>
+      <tr>
+        <td><strong>3. Frasco Casa</strong></td>
+        <td>Anticipo del crédito hipotecario</td>
+        <td>2 años</td>
+        <td>Cocos Capital</td>
+      </tr>
+      <tr>
+        <td><strong>4. Frasco Jubilación</strong></td>
+        <td>Retiro a los 65</td>
+        <td>27 años</td>
+        <td>IOL (donde ya tenés)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box">
+    <strong>Nota importante:</strong> "Operativa" no es ahorro. Es el flujo del mes.
+    Los <strong>frascos de ahorro reales son el 2, 3 y 4</strong>.
+  </div>
+</section>
+
+<section id="rutina">
+  <h2>2. Rutina mensual (el día que cobrás)</h2>
+  <p>
+    Esto es lo más importante de todo el plan. <strong>Primero distribuís a frascos, después gastás lo que queda.</strong>
+    Si esperás a fin de mes a "ver qué quedó", no queda nada. Eso se llama <em>pay yourself first</em> ("pagate a vos primero").
+  </p>
+
+  <ol class="step-list">
+    <li>
+      <strong>Cae el sueldo en el banco:</strong> <span class="number-highlight">$6.000.000 ARS</span>
+    </li>
+    <li>
+      <strong>Transferís a Cocos:</strong> aporte al Colchón + aporte al Frasco Casa.
+      En Fase 1 (primeros 13 meses): <span class="number-highlight">~$1.460.000 ARS</span> (equivale a ~USD 975 a MEP).
+    </li>
+    <li>
+      <strong>Transferís a IOL:</strong> aporte al Frasco Jubilación.
+      En Fase 1: <span class="number-highlight">~$490.000 ARS</span> (~USD 325).
+    </li>
+    <li>
+      <strong>Lo que queda en el banco (~$4.050.000):</strong> cubre gastos fijos, cuota VW, débitos automáticos, y el resumen de TC al cierre.
+    </li>
+    <li>
+      <strong>Lo que sobra del consumo diario → Mercado Pago.</strong>
+      Ahí rinde solo, sin que hagas nada, y lo gastás con la tarjeta MP cuando lo necesites.
+    </li>
+  </ol>
+
+  <div class="success-box">
+    <strong>El truco:</strong> automatizá los pasos 2 y 3. Programá la transferencia para el día siguiente al que cobrás.
+    Si lo hacés manual, en algún momento "te olvidás" y arruinás el plan.
+  </div>
+</section>
+
+<section id="frascos">
+  <h2>3. Los 4 espacios en detalle</h2>
+
+  <!-- OPERATIVA -->
+  <div class="frasco operativa">
+    <div class="frasco-header">
+      <span class="badge operativa">ESPACIO 1</span>
+      <h3 style="margin: 0;">Operativa (banco + Mercado Pago)</h3>
+    </div>
+
+    <p><strong>Función:</strong> recibir sueldo, pagar débitos automáticos, pagar resumen de TC, comprar el día a día.</p>
+    <p><strong>Cuánto debería tener:</strong> apenas lo necesario para el mes (~$4-4,5M ARS). El resto va a frascos.</p>
+
+    <h4>¿En qué invertir acá?</h4>
+    <p>Acá <strong>casi no se invierte</strong> — es plata de uso. Pero el saldo no debería estar muerto en caja de ahorro perdiendo contra inflación.</p>
+    <ul>
+      <li><strong>Banco:</strong> dejás el mínimo para débitos automáticos del mes.</li>
+      <li><strong>Mercado Pago (recomendado):</strong> el saldo rinde automáticamente (Fondo Común de Inversión Money Market). Tenés tarjeta para gastar de ahí.</li>
+      <li><strong>Alternativa:</strong> cuenta remunerada del banco (Galicia Move, BBVA Go, Macro Selecta) — rinde menos pero todo queda en el banco.</li>
+    </ul>
+
+    <h4>¿Cómo se usa?</h4>
+    <p>No hay nada que "leer" ni decidir. Es plata transaccional. Si Mercado Pago, abrís la app, ves el saldo, y rinde solo todos los días.</p>
+  </div>
+
+  <!-- COLCHÓN -->
+  <div class="frasco colchon">
+    <div class="frasco-header">
+      <span class="badge colchon">ESPACIO 2</span>
+      <h3 style="margin: 0;">Colchón de emergencia (Cocos)</h3>
+    </div>
+
+    <p><strong>Función:</strong> guita para emergencias reales — quedarte sin trabajo, gasto médico grande, problema en la casa, etc.</p>
+    <p><strong>Meta:</strong> 3 meses de gastos = ~USD 8.000. Se va llenando de a poco (USD 325/mes en Fase 1).</p>
+    <p><strong>Regla:</strong> no se toca. Nunca. Salvo emergencia real (no "se rompió el celular" — eso entra en consumo).</p>
+
+    <h4>¿En qué invertir acá?</h4>
+    <p>El colchón tiene que tener <strong>dos características</strong>: liquidez total (poder retirar en 24-48hs) y bajo riesgo (que no caiga 20% justo el día que lo necesitás).</p>
+
+    <table>
+      <thead><tr><th>Instrumento</th><th>%</th><th>Qué es</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>FCI Money Market USD (Cocos Ahorro USD)</td>
+          <td>100%</td>
+          <td>Un fondo que invierte en plazos fijos USD y cauciones cortas. Liquidez T+0 (rescatás hoy). Rinde ~3-4% USD anual.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>¿Cómo se lee?</h4>
+    <p>En Cocos vas a ver:</p>
+    <ul>
+      <li><strong>Cuotapartes:</strong> cantidad de "fichas" que tenés del fondo.</li>
+      <li><strong>Valor cuotaparte:</strong> cuánto vale cada ficha hoy.</li>
+      <li><strong>Valor de tu posición:</strong> cuotapartes × valor cuotaparte. Esto es lo que importa.</li>
+    </ul>
+    <p>El valor de la cuotaparte sube todos los días un poquito (interés acumulado). No hay "pérdidas" salvo eventos extremos.</p>
+  </div>
+
+  <!-- CASA -->
+  <div class="frasco casa">
+    <div class="frasco-header">
+      <span class="badge casa">ESPACIO 3</span>
+      <h3 style="margin: 0;">Frasco Casa (Cocos, 2 años)</h3>
+    </div>
+
+    <p><strong>Función:</strong> juntar USD 25.000 para el anticipo del crédito hipotecario.</p>
+    <p><strong>Horizonte:</strong> 24 meses. Esto es <em>corto plazo</em> y eso cambia todo: <strong>nada de acciones acá</strong>.</p>
+
+    <div class="warning-box">
+      <strong>¿Por qué no SPY/QQQ acá?</strong> Porque a 2 años una caída del mercado (que puede ser -30%) te arruina el plan.
+      Las acciones son para horizontes <strong>largos</strong> (10+ años) donde tenés tiempo para recuperar.
+    </div>
+
+    <h4>¿En qué invertir acá?</h4>
+    <table>
+      <thead><tr><th>Instrumento</th><th>%</th><th>Qué es</th><th>Riesgo</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>FCI Money Market USD</td>
+          <td>40%</td>
+          <td>Idem colchón. Plazos fijos USD + cauciones. Líquido.</td>
+          <td>Muy bajo</td>
+        </tr>
+        <tr>
+          <td>ONs Hard Dollar cortas (YPF, Pampa Energía, Telecom)</td>
+          <td>40%</td>
+          <td>Le prestás plata a estas empresas. Ellas te pagan interés periódicamente y te devuelven el capital en el vencimiento (elegís vencimientos &lt;24 meses).</td>
+          <td>Bajo (empresas grandes)</td>
+        </tr>
+        <tr>
+          <td>Bopreal o bonos soberanos USD cortos</td>
+          <td>20%</td>
+          <td>Como las ONs pero le prestás al Estado argentino o al Banco Central. Rinde más pero riesgo país.</td>
+          <td>Medio</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Rendimiento esperado del mix:</strong> ~5-7% en USD anual.</p>
+
+    <h4>¿Cómo se lee?</h4>
+    <ul>
+      <li><strong>FCI:</strong> ves cuotapartes y valor (igual que el colchón).</li>
+      <li><strong>ON:</strong> ves cantidad de bonos (cada bono tiene un nombre, ej "YMCJO" = YPF), precio actual, y cupones que cobrás (intereses) en fechas determinadas. El precio fluctúa pero si lo mantenés hasta el vencimiento, cobrás lo prometido.</li>
+      <li><strong>Bopreal:</strong> mismo principio que ON.</li>
+    </ul>
+
+    <div class="info-box">
+      <strong>Estrategia clave:</strong> "buy and hold" (comprar y mantener hasta el vencimiento). No mirar todos los días.
+      El precio diario del bono importa poco si vas a esperar a que venza.
+    </div>
+  </div>
+
+  <!-- JUBILACIÓN -->
+  <div class="frasco jubilacion">
+    <div class="frasco-header">
+      <span class="badge jubilacion">ESPACIO 4</span>
+      <h3 style="margin: 0;">Frasco Jubilación (IOL, 27 años)</h3>
+    </div>
+
+    <p><strong>Función:</strong> tener USD 500.000+ a los 65 años.</p>
+    <p><strong>Horizonte:</strong> 27 años. Esto es <em>largo plazo</em> — acá sí van acciones.</p>
+
+    <h4>¿En qué invertir acá?</h4>
+    <table>
+      <thead><tr><th>Instrumento</th><th>%</th><th>Qué es</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>CEDEAR de SPY</td>
+          <td>70%</td>
+          <td>Una "ficha" argentina que replica al ETF SPY, que a su vez replica al índice S&amp;P 500 (las 500 empresas más grandes de USA). Si te va bien a USA, te va bien a vos.</td>
+        </tr>
+        <tr>
+          <td>CEDEAR de QQQ</td>
+          <td>30%</td>
+          <td>Igual pero replica al QQQ, que es el Nasdaq 100 (las 100 más grandes tecnológicas: Apple, Microsoft, Google, NVIDIA, etc.). Más volátil pero históricamente rinde más.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Rendimiento histórico esperado:</strong> 7-10% real anual en USD (descontada inflación USA).</p>
+
+    <div class="warning-box">
+      <strong>Va a haber años malos.</strong> El S&amp;P 500 puede caer 30-40% en una crisis (pasó en 2008, 2020, 2022).
+      <strong>No vendas en las caídas.</strong> Históricamente, siempre se recuperó y siguió subiendo. Las caídas son oportunidades de comprar más barato.
+    </div>
+
+    <h4>¿Cómo se compra?</h4>
+    <ol>
+      <li>En IOL buscás "SPY" → aparece el CEDEAR. Aparece un precio en pesos.</li>
+      <li>Pones cuántos querés comprar y a qué precio (o "a mercado" = lo que valga ahora).</li>
+      <li>Listo, tenés CEDEARs. Si SPY sube en USA, tu CEDEAR sube proporcionalmente en Argentina (ajustado por dólar).</li>
+    </ol>
+
+    <h4>¿Cómo se lee?</h4>
+    <ul>
+      <li><strong>Cantidad:</strong> cuántos CEDEARs tenés.</li>
+      <li><strong>Precio actual:</strong> precio en pesos del CEDEAR hoy.</li>
+      <li><strong>Variación diaria:</strong> sube/baja del día. <strong>Ignoralo en horizonte largo.</strong></li>
+      <li><strong>Valorizado en USD:</strong> cuánto vale tu posición traducido a dólares MEP. Este es el número que importa.</li>
+      <li><strong>Rendimiento %:</strong> cuánto ganaste/perdiste desde que compraste.</li>
+    </ul>
+
+    <div class="success-box">
+      <strong>Regla psicológica:</strong> abrí la app de IOL una vez por mes (para aportar), no todos los días.
+      Mirar todos los días te va a hacer tomar malas decisiones.
+    </div>
+
+    <h4>Algo a limpiar:</h4>
+    <p>En tu IOL actual veo CEDEARs sueltos: AAPLD (Apple), AMZND (Amazon), MELID (Mercado Libre), PAMPD (Pampa), TRAND (Transener).
+    Estos los compraste como apuestas individuales. Si no tenés una tesis específica para cada uno, <strong>convendría venderlos y consolidar todo en SPY+QQQ</strong>.
+    ¿Por qué? Porque SPY ya contiene Apple, Amazon, etc. Tenés exposición sin riesgo de "apostar a una sola empresa".</p>
+  </div>
+</section>
+
+<section id="conceptos">
+  <h2>4. Conceptos básicos (glosario)</h2>
+
+  <div class="concept-card">
+    <strong class="term">CEDEAR</strong>
+    <p><em>Certificado de Depósito Argentino.</em> Es una "ficha" que se compra en Argentina (en pesos o en dólares MEP) y representa una acción extranjera (o una fracción).</p>
+    <p><strong>¿Para qué sirve?</strong> Te permite invertir en empresas de Estados Unidos (Apple, Microsoft, SPY, QQQ, etc.) sin tener que abrir cuenta en USA. Comprás en Argentina, está regulado por CNV.</p>
+    <p><strong>Si SPY sube 5% en USA</strong> → tu CEDEAR de SPY sube ~5% en Argentina (más/menos el movimiento del dólar MEP del día).</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">FCI (Fondo Común de Inversión)</strong>
+    <p>Imaginate una "canasta" donde mucha gente pone plata, y un administrador profesional la invierte por todos. Vos comprás "cuotapartes" (fracciones de la canasta).</p>
+    <p><strong>Tipos:</strong> Money Market (plazos fijos, super seguro), Renta Fija (bonos), Renta Variable (acciones), etc.</p>
+    <p><strong>Cómo rescatás:</strong> pedís "rescate" en la app, te depositan en T+0 (mismo día), T+1 o T+2 según el fondo.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">ON (Obligación Negociable)</strong>
+    <p>Es un <strong>préstamo que vos le hacés a una empresa</strong>. La empresa promete:</p>
+    <ul>
+      <li>Pagarte intereses ("cupones") cada 3-6 meses.</li>
+      <li>Devolverte el capital completo al vencimiento.</li>
+    </ul>
+    <p><strong>Riesgo:</strong> que la empresa quiebre y no te pague. Por eso elegís empresas grandes y sólidas (YPF, Pampa, Telecom).</p>
+    <p><strong>"Hard Dollar":</strong> significa que la ON está nominada en dólares físicos (no en dólares "linked" o convertibles). Más seguro.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Bono soberano</strong>
+    <p>Igual que una ON pero le prestás al Estado (Argentina, en este caso). Ejemplos: AL30, AL35, GD30.</p>
+    <p><strong>Más riesgo</strong> que ONs de empresas grandes (Argentina tiene historial de defaults), pero también rinde más.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Bopreal</strong>
+    <p>Bono del Banco Central de la República Argentina. Riesgo intermedio entre ON corporativa y bono soberano. Pensado como instrumento conservador en USD.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Dólar MEP</strong>
+    <p>La forma <strong>legal</strong> de comprar dólares operando en el mercado de capitales. Comprás un bono argentino que cotiza en pesos y en dólares, lo vendés en dólares, y listo: tenés dólares en tu cuenta de inversión.</p>
+    <p>Hoy es la forma más usada para "dolarizar" plata. Las apps (IOL, Cocos) lo hacen automático en 2 clicks.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Cupón</strong>
+    <p>El pago de intereses que te hace un bono o una ON. Ej: "Cupón semestral del 7%" = cada 6 meses te pagan 3,5% del valor nominal del bono.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Vencimiento (de un bono)</strong>
+    <p>La fecha en la que el emisor (empresa o Estado) te devuelve el capital. Si comprás una ON que vence en 2027, en esa fecha cobrás el 100% del valor nominal.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">T+0, T+1, T+2</strong>
+    <p>"T" = día de la operación. "T+0" = liquidación mismo día. "T+2" = liquidación 2 días hábiles después. Te dice cuánto tarda la plata en estar disponible para retirar.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Rendimiento real vs nominal</strong>
+    <p><strong>Nominal:</strong> el número crudo (ej "8% anual"). <strong>Real:</strong> descontada la inflación.</p>
+    <p>Si rinde 8% nominal y la inflación es 3%, el rendimiento real es ~5%. Es lo que importa para no perder poder adquisitivo.</p>
+  </div>
+
+  <div class="concept-card">
+    <strong class="term">Interés compuesto</strong>
+    <p>Es el motor del Frasco Jubilación. Tus intereses generan más intereses. Por eso 27 años a 7% no es 189% (7×27) sino <strong>~520%</strong>. El tiempo es tu mejor amigo acá.</p>
+  </div>
+</section>
+
+<section id="como-leer">
+  <h2>5. Cómo leer cada app (sin marearse)</h2>
+
+  <h3>Mercado Pago / Banco (Espacio 1)</h3>
+  <p>Acá solo ves el saldo y los movimientos. No hay nada que "interpretar". Si está Mercado Pago, ves "Rendimiento del mes" — es la guita que generó solo.</p>
+
+  <h3>Cocos Capital (Espacios 2 y 3)</h3>
+  <p>Cuando abrís la app vas a ver:</p>
+  <ul>
+    <li><strong>Tenencia total:</strong> cuánto valen todas tus inversiones hoy.</li>
+    <li><strong>Por instrumento:</strong> cuotapartes/bonos × precio actual.</li>
+    <li><strong>Rendimiento histórico:</strong> cuánto ganaste/perdiste desde que invertiste.</li>
+  </ul>
+
+  <details>
+    <summary>Ejemplo: cómo se ve una posición en una ON</summary>
+    <p><strong>YMCJO — YPF ON Vto. 2027</strong></p>
+    <ul>
+      <li>Cantidad: 100 bonos</li>
+      <li>Precio actual: USD 95</li>
+      <li>Valorizado: USD 9.500</li>
+      <li>Próximo cupón: 15/09/2026 — USD 350 (3,5%)</li>
+      <li>Vencimiento: 15/03/2027 — recibirás USD 10.000</li>
+    </ul>
+    <p>Significa: pagaste algo y hoy vale 9.500. En septiembre te depositan 350 USD de intereses. En marzo 2027 te devuelven 10.000 USD.</p>
+  </details>
+
+  <h3>IOL (Espacio 4)</h3>
+  <p>Vas a ver una pantalla muy parecida a la captura que me mostraste. Lo importante:</p>
+  <ul>
+    <li><strong>Tu total valorizado en USD MEP:</strong> el número grande arriba. Este es <em>tu</em> número.</li>
+    <li><strong>Variación diaria:</strong> verde sube, rojo baja. <strong>Ignoralo</strong>.</li>
+    <li><strong>Rendimiento:</strong> el % verde/rojo al lado de cada instrumento. Es la ganancia/pérdida acumulada desde que compraste.</li>
+    <li><strong>Lista de tenencias:</strong> cada CEDEAR con su valor.</li>
+  </ul>
+
+  <div class="info-box">
+    <strong>El único número que mirás regularmente:</strong> "Total valorizado en USD" del Frasco Jubilación cada 6 meses. Eso es todo.
+    Si lo mirás todos los días te vas a estresar con caídas que no significan nada en 27 años.
+  </div>
+</section>
+
+<section id="cronograma">
+  <h2>6. Cronograma 24 meses</h2>
+
+  <h3>Fase 1: meses 1 a 13 (con cuota VW vigente)</h3>
+  <p>Excedente disponible: ~USD 1.300/mes equivalente.</p>
+  <table>
+    <thead>
+      <tr><th>Destino</th><th>%</th><th>USD/mes</th><th>ARS/mes (aprox)</th><th>Acumulado a mes 13</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Colchón (Cocos, MM USD)</td>
+        <td>25%</td>
+        <td>~325</td>
+        <td>~$490.000</td>
+        <td>~USD 4.500</td>
+      </tr>
+      <tr>
+        <td>Frasco Casa (Cocos, mix conservador)</td>
+        <td>50%</td>
+        <td>~650</td>
+        <td>~$975.000</td>
+        <td>~USD 8.700 + rinde</td>
+      </tr>
+      <tr>
+        <td>Frasco Jubilación (IOL, SPY/QQQ)</td>
+        <td>25%</td>
+        <td>~325</td>
+        <td>~$490.000</td>
+        <td>~USD 4.500 + rinde</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Fase 2: meses 14 a 24 (cae la cuota VW, libera ~USD 700/mes)</h3>
+  <p>Excedente disponible: ~USD 2.000/mes. Colchón ya cerrado.</p>
+  <table>
+    <thead>
+      <tr><th>Destino</th><th>%</th><th>USD/mes</th><th>Acumulado adicional (11 meses)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Frasco Casa</td>
+        <td>70%</td>
+        <td>~1.400</td>
+        <td>~USD 15.400 + rinde</td>
+      </tr>
+      <tr>
+        <td>Frasco Jubilación</td>
+        <td>30%</td>
+        <td>~600</td>
+        <td>~USD 6.600</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Resultado al mes 24</h3>
+  <div class="grid-2">
+    <div class="success-box">
+      <strong>Frasco Casa:</strong><br>
+      ~USD 25.000-26.000<br>
+      <em>Listo para anticipo hipotecario.</em>
+    </div>
+    <div class="success-box">
+      <strong>Frasco Jubilación:</strong><br>
+      ~USD 21.000+ (de USD 10.150 iniciales)<br>
+      <em>Después seguís aportando USD 1.400-2.000/mes.</em>
+    </div>
+  </div>
+
+  <h3>Proyección a 65 años (mes 24 en adelante)</h3>
+  <p>Con USD 21.000 inicial + USD 1.800/mes promedio a 6% real anual durante 25 años:</p>
+  <p class="number-highlight" style="font-size: 1.4em;">Final estimado: USD 1.300.000+</p>
+  <p>Muy por encima del objetivo de USD 500.000.</p>
+  <p class="footnote">Incluso siendo brutalmente pesimista (4% real anual): ~USD 950.000.</p>
+</section>
+
+<section id="calculadora">
+  <h2>7. Calculadora de aportes mensuales</h2>
+  <p>
+    Ingresá tu <strong>ingreso mensual</strong> y tus <strong>gastos fijos</strong> (todo en pesos).
+    La calculadora te dice cuánto excedente te queda y cómo dividirlo en cada frasco, mostrando la equivalencia en USD al MEP del día.
+    Después en cada broker convertís ARS → USD MEP y comprás los instrumentos correspondientes.
+  </p>
+
+  <div class="calc-container">
+    <div class="calc-inputs">
+
+      <div class="calc-field">
+        <label for="ingreso">Ingreso mensual (ARS)</label>
+        <input type="text" inputmode="decimal" id="ingreso" value="6.000.000">
+        <small>Sueldo neto que recibís en el banco cada mes.</small>
+      </div>
+
+      <div class="calc-field">
+        <label>Gastos fijos mensuales (ARS)</label>
+        <small style="margin-bottom:10px;">Agregá cada gasto fijo con su descripción. Podés editarlos o eliminarlos.</small>
+        <div id="deducciones-list" class="deducciones-list"></div>
+        <button type="button" id="add-deduccion" class="add-button">+ Agregar gasto</button>
+        <div class="deducciones-total">
+          <span>Total gastos fijos</span>
+          <span class="total-amount" id="gastos-total">$0</span>
+        </div>
+      </div>
+
+      <div class="calc-field">
+        <label for="mep">Cotización dólar MEP (ARS por USD)</label>
+        <input type="text" inputmode="decimal" id="mep" value="1.500">
+        <small>Actualizalo con el valor del día. Lo ves en IOL o Cocos al ir a "Comprar dólares".</small>
+      </div>
+
+      <div class="calc-field">
+        <label>Fase del plan</label>
+        <div class="radio-group">
+          <label class="radio-label selected" data-fase="1">
+            <input type="radio" name="fase" value="1" checked>
+            <span><strong>Fase 1</strong> — meses 1 a 13 (cuota VW vigente, construyendo colchón)<br>
+              <small style="color:#6b7280;">Reparto: 25% Colchón · 50% Casa · 25% Jubilación</small></span>
+          </label>
+          <label class="radio-label" data-fase="2">
+            <input type="radio" name="fase" value="2">
+            <span><strong>Fase 2</strong> — meses 14 a 24 (cuota VW liberada, colchón ya completo)<br>
+              <small style="color:#6b7280;">Reparto: 70% Casa · 30% Jubilación</small></span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="calc-results" class="calc-results">
+      <h3>Resultado</h3>
+
+      <div class="calc-excedente blue" id="excedente-box">
+        <div class="calc-label">Excedente para ahorrar este mes</div>
+        <div class="calc-value" id="excedente-ars">$0</div>
+        <div class="calc-sub" id="excedente-usd">≈ USD 0</div>
+        <div class="calc-diff" id="excedente-diff"></div>
+      </div>
+
+      <h4>Distribución por frasco</h4>
+      <div class="calc-distribucion">
+
+        <div class="calc-row colchon">
+          <div class="calc-row-header">
+            <span class="badge colchon">Colchón</span>
+            <span class="calc-pct" id="pct-colchon">25%</span>
+            <span style="color:#6b7280;font-size:0.85em;">→ Cocos</span>
+          </div>
+          <div class="calc-row-value">
+            <div class="calc-ars" id="colchon-ars">$0</div>
+            <div class="calc-usd" id="colchon-usd">≈ USD 0</div>
+          </div>
+        </div>
+
+        <div class="calc-row casa">
+          <div class="calc-row-header">
+            <span class="badge casa">Frasco Casa</span>
+            <span class="calc-pct" id="pct-casa">50%</span>
+            <span style="color:#6b7280;font-size:0.85em;">→ Cocos</span>
+          </div>
+          <div class="calc-row-value">
+            <div class="calc-ars" id="casa-ars">$0</div>
+            <div class="calc-usd" id="casa-usd">≈ USD 0</div>
+          </div>
+        </div>
+
+        <div class="calc-row jubilacion">
+          <div class="calc-row-header">
+            <span class="badge jubilacion">Frasco Jubilación</span>
+            <span class="calc-pct" id="pct-jubilacion">25%</span>
+            <span style="color:#6b7280;font-size:0.85em;">→ IOL</span>
+          </div>
+          <div class="calc-row-value">
+            <div class="calc-ars" id="jubilacion-ars">$0</div>
+            <div class="calc-usd" id="jubilacion-usd">≈ USD 0</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="calc-warning" class="warning-box" style="display:none; margin-top:18px;"></div>
+    </div>
+  </div>
+
+  <div class="info-box" style="margin-top: 20px;">
+    <strong>Cómo aplicar lo calculado, paso a paso:</strong>
+    <ol style="margin-top: 8px;">
+      <li>El día que cobrás, transferís a <strong>Cocos</strong> el monto de Colchón + Frasco Casa (sumados, en pesos).</li>
+      <li>Transferís a <strong>IOL</strong> el monto del Frasco Jubilación (en pesos).</li>
+      <li>En cada broker, comprás dólar MEP (1 botón, 2 minutos). Tu plata en ARS se convierte a USD dentro del broker.</li>
+      <li>Con los USD ya disponibles, comprás los instrumentos de cada frasco (ver <a href="#frascos">sección 3</a> para qué comprar en cada uno).</li>
+    </ol>
+    <p style="margin-top: 10px;"><em>La equivalencia en USD es estimada al MEP que ingresaste. El valor exacto depende del tipo de cambio al momento de operar.</em></p>
+  </div>
+</section>
+
+<section id="gastos">
+  <h2>8. Gastos mensuales (con importación de Excel)</h2>
+  <p>
+    Acá llevás el detalle de gastos fijos por mes, sacás estadísticas y podés sincronizar
+    el total de un mes específico con la calculadora de arriba.
+    Los datos se guardan en tu navegador (localStorage) — no se suben a ningún lado.
+  </p>
+
+  <div class="excel-actions">
+    <label class="upload-button">
+      <span>Importar Excel</span>
+      <input type="file" accept=".xlsx,.xls" hidden id="excel-upload">
+    </label>
+    <button type="button" id="export-excel" class="action-button">Exportar Excel</button>
+    <button type="button" id="clear-data" class="action-button danger">Limpiar todo</button>
+  </div>
+
+  <div class="year-selector">
+    <label for="year-input">Año:</label>
+    <input type="number" id="year-input" value="2026" min="2020" max="2100">
+  </div>
+
+  <div class="gastos-table-wrapper">
+    <table class="gastos-table">
+      <thead>
+        <tr>
+          <th class="col-concepto">Concepto</th>
+          <th class="col-codigo">Código</th>
+          <th>Ene</th>
+          <th>Feb</th>
+          <th>Mar</th>
+          <th>Abr</th>
+          <th>May</th>
+          <th>Jun</th>
+          <th>Jul</th>
+          <th>Ago</th>
+          <th>Sep</th>
+          <th>Oct</th>
+          <th>Nov</th>
+          <th>Dic</th>
+          <th class="col-total">Total</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="gastos-tbody"></tbody>
+      <tfoot>
+        <tr id="gastos-totales-row" class="totals-row"></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <button type="button" id="add-concepto" class="add-button">+ Agregar concepto</button>
+
+  <h3 style="margin-top:30px;">Estadísticas del año</h3>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Promedio mensual</div>
+      <div class="stat-value" id="stat-promedio">$0</div>
+      <div class="stat-sub">sobre meses con datos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mes más alto</div>
+      <div class="stat-value" id="stat-max">$0</div>
+      <div class="stat-sub" id="stat-max-mes">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mes más bajo</div>
+      <div class="stat-value" id="stat-min">$0</div>
+      <div class="stat-sub" id="stat-min-mes">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total año</div>
+      <div class="stat-value" id="stat-total-anio">$0</div>
+      <div class="stat-sub">acumulado</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:30px;">Evolución mensual</h3>
+  <div class="chart-card">
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+
+  <h3 style="margin-top:30px;">Sincronizar con la calculadora</h3>
+  <p style="margin-bottom:12px;">
+    Reemplaza los gastos de la <a href="#calculadora">calculadora</a> con los conceptos
+    que tengan monto en el mes seleccionado:
+  </p>
+  <div class="sync-controls">
+    <select id="mes-selector" class="mes-select">
+      <option>Enero</option>
+      <option>Febrero</option>
+      <option>Marzo</option>
+      <option>Abril</option>
+      <option>Mayo</option>
+      <option>Junio</option>
+      <option>Julio</option>
+      <option>Agosto</option>
+      <option>Septiembre</option>
+      <option>Octubre</option>
+      <option>Noviembre</option>
+      <option>Diciembre</option>
+    </select>
+    <button type="button" id="cargar-en-calc" class="action-button primary">Cargar este mes en la calculadora</button>
+  </div>
+
+  <div class="info-box" style="margin-top:20px;">
+    <strong>Flujo recomendado:</strong>
+    <ol style="margin-top:8px;">
+      <li>Importás tu Excel actual con "Importar Excel".</li>
+      <li>Editás los gastos del mes en curso directamente en la tabla (los totales y estadísticas se actualizan solos).</li>
+      <li>Seleccionás el mes y apretás "Cargar en la calculadora" para ver tu excedente y distribución por frasco.</li>
+      <li>Al terminar el mes, "Exportar Excel" para tener un backup en disco.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="reglas">
+  <h2>9. Reglas de oro</h2>
+
+  <ol>
+    <li><strong>Pagate a vos primero.</strong> Distribución a frascos antes que cualquier gasto.</li>
+    <li><strong>Automatizá las transferencias.</strong> El día siguiente al sueldo, todo se mueve solo.</li>
+    <li><strong>Pago de TC en full siempre.</strong> Nunca refinancies — los TNA 70%+ destruyen patrimonio. Ya lo hacés bien.</li>
+    <li><strong>Cuotas sin interés solo si suman &lt;15% del ingreso.</strong> Comprometen flujo futuro aunque no cobren interés.</li>
+    <li><strong>Frasco Casa no se mezcla con Frasco Jubilación.</strong> Por eso brokers distintos.</li>
+    <li><strong>Colchón no se toca.</strong> Si lo tocás, tenés que reponerlo en los meses siguientes como primera prioridad.</li>
+    <li><strong>No vendas en caídas del mercado.</strong> En jubilación, las caídas son oportunidades de comprar más barato.</li>
+    <li><strong>Aporte mensual constante (DCA).</strong> Comprar siempre el mismo monto cada mes promedia el precio en el tiempo. Se llama Dollar Cost Averaging.</li>
+    <li><strong>Rebalanceo cada 6 meses.</strong> Si SPY subió mucho y ya no es 70%, vendés un poco y comprás QQQ para volver a 70/30. Mantenés disciplina.</li>
+    <li><strong>Revisá el plan cada 6 meses.</strong> Ajustá por inflación, cambio salarial, gastos nuevos.</li>
+  </ol>
+</section>
+
+<section id="errores">
+  <h2>10. Errores comunes a evitar</h2>
+
+  <div class="danger-box">
+    <strong>1. Mirar las cotizaciones todos los días.</strong><br>
+    Vas a ver rojos que te van a dar ganas de vender. Es ruido, no señal. Para Frasco Jubilación: revisión mensual al aportar, máximo.
+  </div>
+
+  <div class="danger-box">
+    <strong>2. "Esto va a subir, me la juego."</strong><br>
+    Acciones individuales (Apple, NVIDIA, lo que sea) son apuestas. El plan dice SPY+QQQ porque <em>contienen</em> esas empresas pero diversificado. Si una se va al cuerno, las otras te salvan.
+  </div>
+
+  <div class="danger-box">
+    <strong>3. Cambiar de estrategia cada vez que ves un titular.</strong><br>
+    "Trump dijo X, Milei hizo Y, voy a vender todo." Quedate con el plan. Si la tesis es 27 años, lo que pasó este mes no importa.
+  </div>
+
+  <div class="danger-box">
+    <strong>4. Sacar del Frasco Casa para una "oportunidad".</strong><br>
+    Cada frasco tiene su misión. Si "te aparece" una oportunidad de inversión que requiere romper un frasco, ignorala.
+  </div>
+
+  <div class="danger-box">
+    <strong>5. No tener colchón y empezar a invertir.</strong><br>
+    Si pasa una emergencia y no tenés colchón, terminás vendiendo el Frasco Jubilación en mal momento (a pérdida). Por eso el colchón va primero.
+  </div>
+
+  <div class="danger-box">
+    <strong>6. Comprar criptomonedas con plata de los frascos.</strong><br>
+    Cripto es alta volatilidad. Si te tienta, hacelo solo con plata que podés perder al 100% — nunca del colchón ni de los frascos planificados.
+  </div>
+
+  <div class="danger-box">
+    <strong>7. Caer en "asesores" que te ofrecen rendimientos garantizados altos.</strong><br>
+    Si alguien te promete 30% USD garantizado, es estafa. Punto. Los rendimientos reales conservadores en USD son 4-7%; agresivos a largo plazo 8-12%.
+  </div>
+</section>
+
+<div class="disclaimer">
+  <strong>Aclaración:</strong> Este documento es educativo y refleja una propuesta basada en los datos personales compartidos.
+  No constituye asesoramiento financiero matriculado bajo normativa CNV. Antes de operar instrumentos específicos
+  (ONs, bonos, FCI puntuales) conviene validar con un asesor financiero registrado, especialmente la elección
+  de tickers concretos según condiciones de mercado al momento de invertir.<br><br>
+  Los rendimientos históricos no garantizan rendimientos futuros. Toda inversión en mercado de capitales
+  tiene riesgo de pérdida, incluyendo pérdida total del capital.
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+  // Default deductions (gastos fijos típicos del usuario)
+  let deducciones = [
+    { desc: 'Cuota VW',                       monto: 1044388 },
+    { desc: 'Resumen tarjeta de crédito',     monto: 2300000 },
+    { desc: 'Servicios, expensas y consumos', monto: 655612  }
+  ];
+
+  // Target de ahorro: 20% del ingreso bruto
+  const TARGET_PCT = 0.20;
+
+  const formatARS = v => new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', maximumFractionDigits: 0
+  }).format(v);
+
+  const formatUSD = v => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', maximumFractionDigits: 0
+  }).format(v);
+
+  // Formato argentino sin símbolo, para inputs: 5.027.511 o 5.027.511,50
+  const formatNumberAR = v => {
+    if (v === null || v === undefined || isNaN(v)) return '';
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(v);
+  };
+
+  // Parsea "5.027.511,00" o "5027511" o "5027511,5" a número
+  const parseARS = str => {
+    if (typeof str === 'number') return str;
+    if (!str) return 0;
+    const cleaned = String(str)
+      .replace(/\./g, '')        // sacar puntos (miles)
+      .replace(',', '.')         // coma decimal a punto
+      .replace(/[^\d.-]/g, '');  // limpiar todo lo que no sea dígito/punto/menos
+    return parseFloat(cleaned) || 0;
+  };
+
+  // ===== Gastos mensuales (sección 8) =====
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const STORAGE_KEY = 'plan_ahorro_gastos_v1';
+
+  let gastosData = [];
+  let yearData = 2026;
+
+  const emptyMeses = () => MESES.reduce((acc, m) => { acc[m] = 0; return acc; }, {});
+  const rowSum = item => MESES.reduce((s, m) => s + (item.meses[m] || 0), 0);
+  const colSum = mes => gastosData.reduce((s, item) => s + (item.meses[mes] || 0), 0);
+
+  function formatARSCompact(value) {
+    if (!value) return '';
+    if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return '$' + Math.round(value / 1000) + 'K';
+    return formatARS(value);
+  }
+
+  function saveGastos() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ year: yearData, gastos: gastosData }));
+    } catch (e) { console.error('No se pudo guardar:', e); }
+  }
+
+  function loadGastos() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      yearData = data.year || 2026;
+      gastosData = (data.gastos || []).map(g => ({
+        concepto: g.concepto || '',
+        codigo: g.codigo || '',
+        meses: Object.assign(emptyMeses(), g.meses || {})
+      }));
+      return true;
+    } catch (e) {
+      console.error('Error cargando datos:', e);
+      return false;
+    }
+  }
+
+  function renderGastosTable() {
+    const tbody = document.getElementById('gastos-tbody');
+    tbody.innerHTML = '';
+
+    gastosData.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+
+      const tdConcepto = document.createElement('td');
+      const conceptoInput = document.createElement('input');
+      conceptoInput.type = 'text';
+      conceptoInput.className = 'cell-input cell-text';
+      conceptoInput.value = item.concepto;
+      conceptoInput.placeholder = 'Concepto';
+      conceptoInput.addEventListener('input', e => {
+        gastosData[idx].concepto = e.target.value;
+        saveGastos();
+      });
+      tdConcepto.appendChild(conceptoInput);
+      tr.appendChild(tdConcepto);
+
+      const tdCodigo = document.createElement('td');
+      const codigoInput = document.createElement('input');
+      codigoInput.type = 'text';
+      codigoInput.className = 'cell-input cell-text';
+      codigoInput.value = item.codigo;
+      codigoInput.placeholder = '—';
+      codigoInput.addEventListener('input', e => {
+        gastosData[idx].codigo = e.target.value;
+        saveGastos();
+      });
+      tdCodigo.appendChild(codigoInput);
+      tr.appendChild(tdCodigo);
+
+      MESES.forEach(mes => {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.className = 'cell-input';
+        input.value = item.meses[mes] > 0 ? formatNumberAR(item.meses[mes]) : '';
+        input.placeholder = '—';
+        input.addEventListener('input', e => {
+          gastosData[idx].meses[mes] = parseARS(e.target.value);
+          updateRowTotal(idx);
+          renderTotalsRow();
+          renderStats();
+          renderChart();
+          saveGastos();
+        });
+        input.addEventListener('blur', e => {
+          const n = gastosData[idx].meses[mes];
+          e.target.value = n > 0 ? formatNumberAR(n) : '';
+        });
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+
+      const tdTotal = document.createElement('td');
+      tdTotal.className = 'row-total';
+      tdTotal.id = `row-total-${idx}`;
+      tdTotal.textContent = formatARS(rowSum(item));
+      tr.appendChild(tdTotal);
+
+      const tdDel = document.createElement('td');
+      tdDel.style.textAlign = 'center';
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'remove-row';
+      delBtn.textContent = '×';
+      delBtn.title = 'Eliminar concepto';
+      delBtn.addEventListener('click', () => {
+        if (confirm(`¿Eliminar "${gastosData[idx].concepto || 'este concepto'}"?`)) {
+          gastosData.splice(idx, 1);
+          renderGastosTable();
+          renderTotalsRow();
+          renderStats();
+          renderChart();
+          saveGastos();
+        }
+      });
+      tdDel.appendChild(delBtn);
+      tr.appendChild(tdDel);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateRowTotal(idx) {
+    const el = document.getElementById(`row-total-${idx}`);
+    if (el) el.textContent = formatARS(rowSum(gastosData[idx]));
+  }
+
+  function renderTotalsRow() {
+    const row = document.getElementById('gastos-totales-row');
+    row.innerHTML = '';
+
+    const tdLabel = document.createElement('td');
+    tdLabel.colSpan = 2;
+    tdLabel.className = 'totals-label';
+    tdLabel.textContent = 'TOTAL POR MES';
+    row.appendChild(tdLabel);
+
+    let totalAnio = 0;
+    MESES.forEach(mes => {
+      const sum = colSum(mes);
+      totalAnio += sum;
+      const td = document.createElement('td');
+      td.textContent = sum > 0 ? formatARSCompact(sum) : '—';
+      row.appendChild(td);
+    });
+
+    const tdAnio = document.createElement('td');
+    tdAnio.className = 'grand-total';
+    tdAnio.textContent = formatARS(totalAnio);
+    row.appendChild(tdAnio);
+
+    row.appendChild(document.createElement('td'));
+  }
+
+  function renderStats() {
+    const totalsMes = MESES.map(m => colSum(m));
+    const totalAnio = totalsMes.reduce((s, v) => s + v, 0);
+    const mesesConDatos = totalsMes.filter(v => v > 0);
+    const promedio = mesesConDatos.length > 0 ? totalAnio / mesesConDatos.length : 0;
+
+    let maxIdx = -1, minIdx = -1;
+    totalsMes.forEach((v, i) => {
+      if (v > 0) {
+        if (maxIdx === -1 || v > totalsMes[maxIdx]) maxIdx = i;
+        if (minIdx === -1 || v < totalsMes[minIdx]) minIdx = i;
+      }
+    });
+
+    document.getElementById('stat-promedio').textContent = formatARS(promedio);
+    document.getElementById('stat-max').textContent = maxIdx >= 0 ? formatARS(totalsMes[maxIdx]) : formatARS(0);
+    document.getElementById('stat-max-mes').textContent = maxIdx >= 0 ? MESES[maxIdx] : '—';
+    document.getElementById('stat-min').textContent = minIdx >= 0 ? formatARS(totalsMes[minIdx]) : formatARS(0);
+    document.getElementById('stat-min-mes').textContent = minIdx >= 0 ? MESES[minIdx] : '—';
+    document.getElementById('stat-total-anio').textContent = formatARS(totalAnio);
+  }
+
+  function renderChart() {
+    const chart = document.getElementById('bar-chart');
+    chart.innerHTML = '';
+    const totalsMes = MESES.map(m => colSum(m));
+    const maxVal = Math.max(...totalsMes, 1);
+
+    totalsMes.forEach((value, idx) => {
+      const pct = maxVal > 0 ? (value / maxVal) * 100 : 0;
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.title = `${MESES[idx]}: ${formatARS(value)}`;
+
+      if (value > 0) {
+        const valueLabel = document.createElement('div');
+        valueLabel.className = 'bar-value';
+        valueLabel.textContent = formatARSCompact(value);
+        bar.appendChild(valueLabel);
+      }
+
+      const fill = document.createElement('div');
+      fill.className = 'bar-fill';
+      fill.style.height = pct + '%';
+      bar.appendChild(fill);
+
+      const label = document.createElement('div');
+      label.className = 'bar-label';
+      label.textContent = MESES_CORTOS[idx];
+      bar.appendChild(label);
+
+      chart.appendChild(bar);
+    });
+  }
+
+  function addConcepto() {
+    gastosData.push({ concepto: '', codigo: '', meses: emptyMeses() });
+    renderGastosTable();
+    renderTotalsRow();
+    saveGastos();
+    setTimeout(() => {
+      const rows = document.querySelectorAll('#gastos-tbody tr');
+      if (rows.length > 0) rows[rows.length - 1].querySelector('input').focus();
+    }, 0);
+  }
+
+  function clearAllGastos() {
+    if (!confirm('¿Eliminar TODOS los gastos cargados? Esto no se puede deshacer (a menos que tengas un Excel exportado).')) return;
+    gastosData = [];
+    renderGastosTable();
+    renderTotalsRow();
+    renderStats();
+    renderChart();
+    saveGastos();
+  }
+
+  function importarExcel(file) {
+    if (typeof XLSX === 'undefined') {
+      alert('La librería para leer Excel no se cargó. Verificá tu conexión a internet y refrescá la página.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        let headerRow = -1;
+        for (let i = 0; i < Math.min(15, json.length); i++) {
+          const cell = String(json[i][0] || '').toLowerCase();
+          if (cell.includes('impuesto') || cell.includes('servicio') || cell.includes('concepto')) {
+            headerRow = i;
+            break;
+          }
+        }
+
+        if (headerRow === -1) {
+          alert('No se encontró la fila de encabezados. La primera columna del Excel debe llamarse "Impuesto/Servicio" o "Concepto".');
+          return;
+        }
+
+        const headers = json[headerRow];
+        const mesColIndex = {};
+        for (let c = 2; c < headers.length; c++) {
+          const colName = String(headers[c] || '').trim();
+          const matched = MESES.find(m => m.toLowerCase() === colName.toLowerCase());
+          if (matched) mesColIndex[matched] = c;
+        }
+
+        const newGastos = [];
+        for (let i = headerRow + 1; i < json.length; i++) {
+          const row = json[i];
+          const concepto = String(row[0] || '').trim();
+          if (!concepto) continue;
+          if (concepto.toLowerCase() === 'totales' || concepto.toLowerCase().startsWith('total')) break;
+
+          const item = { concepto: concepto, codigo: String(row[1] || ''), meses: emptyMeses() };
+          MESES.forEach(mes => {
+            if (mesColIndex[mes] !== undefined) {
+              const v = row[mesColIndex[mes]];
+              const num = typeof v === 'number' ? v : (parseFloat(String(v).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0);
+              item.meses[mes] = num;
+            }
+          });
+          newGastos.push(item);
+        }
+
+        if (newGastos.length === 0) {
+          alert('No se encontraron conceptos en el Excel.');
+          return;
+        }
+
+        gastosData = newGastos;
+        renderGastosTable();
+        renderTotalsRow();
+        renderStats();
+        renderChart();
+        saveGastos();
+        alert(`Se importaron ${newGastos.length} conceptos del Excel.`);
+      } catch (err) {
+        alert('Error al leer el Excel: ' + err.message);
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function exportarExcel() {
+    if (typeof XLSX === 'undefined') {
+      alert('La librería para escribir Excel no se cargó.');
+      return;
+    }
+    const headers = ['Impuesto/Servicio', 'Codigo', ...MESES, 'Total'];
+    const rows = [headers];
+    gastosData.forEach(item => {
+      const row = [item.concepto, item.codigo];
+      let total = 0;
+      MESES.forEach(mes => {
+        const v = item.meses[mes] || 0;
+        row.push(v);
+        total += v;
+      });
+      row.push(total);
+      rows.push(row);
+    });
+    const totalsRow = ['TOTALES', ''];
+    let grandTotal = 0;
+    MESES.forEach(mes => {
+      const sum = colSum(mes);
+      totalsRow.push(sum);
+      grandTotal += sum;
+    });
+    totalsRow.push(grandTotal);
+    rows.push(totalsRow);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 22 }, { wch: 18 }, ...MESES.map(() => ({ wch: 12 })), { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Gastos ${yearData}`);
+    XLSX.writeFile(wb, `Gastos_${yearData}.xlsx`);
+  }
+
+  function cargarMesEnCalculadora() {
+    const mes = document.getElementById('mes-selector').value;
+    const conceptos = gastosData
+      .filter(item => (item.meses[mes] || 0) > 0)
+      .map(item => ({ desc: item.concepto, monto: item.meses[mes] || 0 }));
+
+    if (conceptos.length === 0) {
+      alert(`No hay gastos cargados en ${mes}.`);
+      return;
+    }
+
+    deducciones = conceptos;
+    renderDeducciones();
+    calcular();
+    document.getElementById('calculadora').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function renderDeducciones() {
+    const container = document.getElementById('deducciones-list');
+    container.innerHTML = '';
+    deducciones.forEach((d, i) => {
+      const row = document.createElement('div');
+      row.className = 'deduccion-row';
+
+      const descInput = document.createElement('input');
+      descInput.type = 'text';
+      descInput.value = d.desc;
+      descInput.placeholder = 'Descripción del gasto';
+      descInput.addEventListener('input', e => { deducciones[i].desc = e.target.value; });
+
+      const montoInput = document.createElement('input');
+      montoInput.type = 'text';
+      montoInput.inputMode = 'decimal';
+      montoInput.value = formatNumberAR(d.monto);
+      montoInput.placeholder = '0';
+      montoInput.addEventListener('input', e => {
+        deducciones[i].monto = parseARS(e.target.value);
+        calcular();
+      });
+      montoInput.addEventListener('blur', e => {
+        e.target.value = deducciones[i].monto > 0 ? formatNumberAR(deducciones[i].monto) : '';
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'remove-deduccion';
+      removeBtn.textContent = '×';
+      removeBtn.title = 'Eliminar este gasto';
+      removeBtn.addEventListener('click', () => {
+        deducciones.splice(i, 1);
+        renderDeducciones();
+        calcular();
+      });
+
+      row.appendChild(descInput);
+      row.appendChild(montoInput);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    });
+  }
+
+  function calcular() {
+    const ingreso = parseARS(document.getElementById('ingreso').value);
+    const gastos = deducciones.reduce((sum, d) => sum + (d.monto || 0), 0);
+    const mep = parseARS(document.getElementById('mep').value) || 1;
+    const fase = document.querySelector('input[name="fase"]:checked').value;
+
+    document.getElementById('gastos-total').textContent = formatARS(gastos);
+
+    const excedente = ingreso - gastos;
+    const target = ingreso * TARGET_PCT;
+    const diff = excedente - target;
+
+    let pctColchon, pctCasa, pctJubilacion;
+    if (fase === '1') {
+      pctColchon = 0.25; pctCasa = 0.50; pctJubilacion = 0.25;
+    } else {
+      pctColchon = 0; pctCasa = 0.70; pctJubilacion = 0.30;
+    }
+
+    document.getElementById('pct-colchon').textContent = (pctColchon * 100) + '%';
+    document.getElementById('pct-casa').textContent = (pctCasa * 100) + '%';
+    document.getElementById('pct-jubilacion').textContent = (pctJubilacion * 100) + '%';
+
+    const colchonArs = Math.max(0, excedente) * pctColchon;
+    const casaArs = Math.max(0, excedente) * pctCasa;
+    const jubilacionArs = Math.max(0, excedente) * pctJubilacion;
+
+    document.getElementById('excedente-ars').textContent = formatARS(excedente);
+    document.getElementById('excedente-usd').textContent = '≈ ' + formatUSD(excedente / mep);
+
+    // Color-code del excedente vs target del 20%
+    const box = document.getElementById('excedente-box');
+    const diffEl = document.getElementById('excedente-diff');
+    box.classList.remove('red', 'blue', 'green');
+
+    if (ingreso === 0) {
+      box.classList.add('blue');
+      diffEl.textContent = '';
+    } else {
+      const ratio = excedente / target;
+      if (ratio < 0.95) {
+        box.classList.add('red');
+        if (excedente < 0) {
+          diffEl.textContent = 'Estás en negativo. Faltan ' + formatARS(Math.abs(diff)) + ' para llegar al 20% del ingreso (' + formatARS(target) + ').';
+        } else {
+          diffEl.textContent = formatARS(Math.abs(diff)) + ' por debajo del 20% (target: ' + formatARS(target) + ').';
+        }
+      } else if (ratio <= 1.05) {
+        box.classList.add('blue');
+        diffEl.textContent = 'En target — 20% del ingreso (' + formatARS(target) + ').';
+      } else {
+        box.classList.add('green');
+        diffEl.textContent = '+' + formatARS(diff) + ' por encima del 20% (target: ' + formatARS(target) + ').';
+      }
+    }
+
+    document.getElementById('colchon-ars').textContent = formatARS(colchonArs);
+    document.getElementById('colchon-usd').textContent = '≈ ' + formatUSD(colchonArs / mep);
+
+    document.getElementById('casa-ars').textContent = formatARS(casaArs);
+    document.getElementById('casa-usd').textContent = '≈ ' + formatUSD(casaArs / mep);
+
+    document.getElementById('jubilacion-ars').textContent = formatARS(jubilacionArs);
+    document.getElementById('jubilacion-usd').textContent = '≈ ' + formatUSD(jubilacionArs / mep);
+
+    const warning = document.getElementById('calc-warning');
+    if (excedente <= 0) {
+      warning.style.display = 'block';
+      warning.innerHTML = '<strong>Atención:</strong> tus gastos fijos igualan o superan tu ingreso. No hay excedente para ahorrar este mes. Revisá si podés reducir algún gasto fijo, postergar consumos en cuotas, o sumar ingreso extra antes de planificar aportes.';
+    } else if (excedente < 200000) {
+      warning.style.display = 'block';
+      warning.innerHTML = '<strong>Excedente muy bajo:</strong> con menos de $200.000 ARS de excedente, el plan funciona pero los montos en USD por frasco van a ser chicos. Considerá revisar gastos fijos o ver oportunidades de ingreso adicional.';
+    } else {
+      warning.style.display = 'none';
+    }
+  }
+
+  function actualizarRadiosVisuales() {
+    document.querySelectorAll('.radio-label').forEach(label => {
+      const input = label.querySelector('input[type="radio"]');
+      if (input.checked) label.classList.add('selected');
+      else label.classList.remove('selected');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderDeducciones();
+
+    const ingresoEl = document.getElementById('ingreso');
+    const mepEl = document.getElementById('mep');
+
+    ingresoEl.addEventListener('input', calcular);
+    ingresoEl.addEventListener('blur', () => {
+      const n = parseARS(ingresoEl.value);
+      ingresoEl.value = n > 0 ? formatNumberAR(n) : '';
+      calcular();
+    });
+
+    mepEl.addEventListener('input', calcular);
+    mepEl.addEventListener('blur', () => {
+      const n = parseARS(mepEl.value);
+      mepEl.value = n > 0 ? formatNumberAR(n) : '';
+      calcular();
+    });
+
+    document.querySelectorAll('input[name="fase"]').forEach(el => {
+      el.addEventListener('change', () => {
+        actualizarRadiosVisuales();
+        calcular();
+      });
+    });
+
+    document.getElementById('add-deduccion').addEventListener('click', () => {
+      deducciones.push({ desc: '', monto: 0 });
+      renderDeducciones();
+      calcular();
+      const rows = document.querySelectorAll('.deduccion-row');
+      if (rows.length > 0) {
+        rows[rows.length - 1].querySelector('input[type="text"]').focus();
+      }
+    });
+
+    calcular();
+
+    // ===== Setup sección 8: Gastos mensuales =====
+    loadGastos();
+    document.getElementById('year-input').value = yearData;
+    document.getElementById('year-input').addEventListener('input', e => {
+      yearData = parseInt(e.target.value) || 2026;
+      saveGastos();
+    });
+
+    document.getElementById('excel-upload').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) importarExcel(file);
+      e.target.value = '';
+    });
+    document.getElementById('export-excel').addEventListener('click', exportarExcel);
+    document.getElementById('clear-data').addEventListener('click', clearAllGastos);
+    document.getElementById('add-concepto').addEventListener('click', addConcepto);
+    document.getElementById('cargar-en-calc').addEventListener('click', cargarMesEnCalculadora);
+
+    // Seleccionar mes actual por defecto en el selector
+    const currentMonth = new Date().getMonth();
+    document.getElementById('mes-selector').value = MESES[currentMonth];
+
+    renderGastosTable();
+    renderTotalsRow();
+    renderStats();
+    renderChart();
+  });
+</script>
+
+</body>
+</html>
