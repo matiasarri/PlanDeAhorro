@@ -2,7 +2,7 @@
   "name": "Plan Cloud — Gastos & Ahorro",
   "short_name": "Plan Cloud",
   "description": "App personal para gestionar gastos mensuales, calculadora de ahorro y histórico de aportes por frasco.",
-  "start_url": "./plan-cloud.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
