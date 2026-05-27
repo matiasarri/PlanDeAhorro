@@ -2404,12 +2404,13 @@ function renderIolPositions() {
   // Fila de totales
   const totalGanPct = totalCostoUSD > 0 ? (totalGananciaUSD / totalCostoUSD) * 100 : 0;
   const ganClass = totalGanPct >= 0 ? 'iol-positive' : 'iol-negative';
-  const ganText = (totalGanPct >= 0 ? '+' : '') + totalGanPct.toFixed(1) + '%';
+  const ganPctText = (totalGanPct >= 0 ? '+' : '') + totalGanPct.toFixed(1) + '%';
+  const ganUsdText = (totalGananciaUSD >= 0 ? '+' : '') + formatUSD(totalGananciaUSD);
   totalsRow.innerHTML = `
     <td colspan="6" class="totals-label">TOTAL POSICIONES (al MEP $${formatNumberAR(mep)})</td>
     <td><strong>${formatARS(grandTotalARS)}</strong></td>
     <td class="grand-total"><strong>${formatUSD(grandTotalUSD)}</strong></td>
-    <td class="${ganClass}"><strong>${ganText}</strong></td>
+    <td class="${ganClass}"><strong>${ganPctText}</strong><br><span style="font-size: 0.82em; font-weight: 500;">${ganUsdText}</span></td>
     <td></td>
   `;
 }
