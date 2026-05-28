@@ -2641,15 +2641,39 @@ function renderLineChart(rows) {
 /* =====================================================
    INIT
    ===================================================== */
+// Aplica restricciones de UI según el rol del usuario
+function applyRolePermissions(role) {
+  const restricted = ['calc', 'historico', 'inversiones'];
+  if (role === 'gastos_only') {
+    restricted.forEach(tab => {
+      const btn = document.querySelector(`[data-tab="${tab}"]`);
+      if (btn) btn.style.display = 'none';
+    });
+    // Si la pestaña activa está restringida, forzar Gastos
+    const activeTab = document.querySelector('.tab-btn.active')?.dataset?.tab;
+    if (!activeTab || restricted.includes(activeTab)) {
+      showTab('gastos');
+    }
+  } else {
+    // Asegurarse de que todas estén visibles
+    restricted.forEach(tab => {
+      const btn = document.querySelector(`[data-tab="${tab}"]`);
+      if (btn) btn.style.display = '';
+    });
+  }
+}
+
 async function initApp() {
   showLoader(true);
   try {
-    // Cargar config del usuario
+    // Cargar config del usuario (incluye role)
     const cfg = await fetchUserConfig();
     if (cfg) {
       if (cfg.default_ingreso) document.getElementById('ingreso').value = formatNumberAR(cfg.default_ingreso);
       if (cfg.default_mep) document.getElementById('mep').value = formatNumberAR(cfg.default_mep);
     }
+    // Aplicar permisos de rol (gastos_only por defecto si no hay config — más seguro)
+    applyRolePermissions(cfg?.role || 'gastos_only');
 
     // Default mes en selector
     document.getElementById('calc-mes-select').value = MESES[new Date().getMonth()];
