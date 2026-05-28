@@ -864,6 +864,175 @@
   .iol-positive { color: #059669; font-weight: 600; }
   .iol-negative { color: #dc2626; font-weight: 600; }
 
+  /* Ocultar scrollbars visualmente en navs/sidebars con overflow-x (manteniendo el scroll) */
+  .tab-nav,
+  .brokers-sidebar {
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* IE 10+ */
+  }
+  .tab-nav::-webkit-scrollbar,
+  .brokers-sidebar::-webkit-scrollbar {
+    display: none;                /* Chrome / Safari / Edge */
+  }
+
+  /* Por frasco: layout compacto en una sola línea (label + valor) */
+  .frasco-compact {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 0 !important;
+  }
+  .frasco-compact .summary-card {
+    padding: 8px 12px !important;
+    border-left-width: 4px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    text-align: left !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s;
+  }
+  /* Sombra con el color del frasco — define mejor dónde termina la pastilla */
+  .frasco-compact .summary-card.colchon { box-shadow: 0 2px 6px rgba(245,158,11,0.28); }
+  .frasco-compact .summary-card.casa { box-shadow: 0 2px 6px rgba(16,185,129,0.28); }
+  .frasco-compact .summary-card.jubilacion { box-shadow: 0 2px 6px rgba(139,92,246,0.28); }
+  .frasco-compact .summary-card:hover { box-shadow: 0 3px 9px rgba(0,0,0,0.12); }
+  .frasco-compact .summary-card.colchon:hover { box-shadow: 0 3px 10px rgba(245,158,11,0.4); }
+  .frasco-compact .summary-card.casa:hover { box-shadow: 0 3px 10px rgba(16,185,129,0.4); }
+  .frasco-compact .summary-card.jubilacion:hover { box-shadow: 0 3px 10px rgba(139,92,246,0.4); }
+  .frasco-compact .summary-card .label {
+    font-size: 0.85em;
+    color: #6b7280;
+    margin-bottom: 0 !important;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .frasco-compact .summary-card .value {
+    font-size: 0.95em !important;
+    color: #1e3a8a;
+    font-weight: 700;
+    text-align: right;
+  }
+  @media (max-width: 700px) {
+    .frasco-compact {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 6px !important;
+    }
+    .frasco-compact .summary-card {
+      padding: 6px 10px !important;
+      gap: 6px !important;
+    }
+    .frasco-compact .summary-card .label { font-size: 0.78em; }
+    .frasco-compact .summary-card .value { font-size: 0.82em !important; }
+  }
+
+  /* Layout sidebar + content para brokers */
+  .brokers-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 14px;
+    margin-top: 6px;
+  }
+  .brokers-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .broker-item {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.15s, background 0.15s;
+    border-left-width: 4px;
+  }
+  .broker-item:hover { border-color: #3b82f6; }
+  .broker-item.active {
+    border-color: #1e3a8a;
+    background: #eff6ff;
+    border-left-color: #1e3a8a;
+  }
+  .broker-item[data-broker="iol"] { border-left-color: #1e3a8a; }
+  .broker-item[data-broker="cocos"] { border-left-color: #10b981; }
+  .broker-name {
+    font-weight: 700;
+    color: #1e3a8a;
+    font-size: 0.95em;
+  }
+  .broker-total {
+    font-size: 1em;
+    font-weight: 600;
+    color: #1e40af;
+  }
+  .broker-status {
+    font-size: 0.78em;
+    color: #6b7280;
+  }
+  .broker-view { min-width: 0; }
+
+  /* CRÍTICO: permitir que las celdas del grid se achiquen al ancho del viewport
+     en lugar de crecer con su contenido (tablas anchas como Saldos).
+     Sin esto, todo el broker-content se hace más ancho que la pantalla y las
+     position cards quedan cortadas a la derecha. */
+  .brokers-content { min-width: 0; }
+  .brokers-content .panel { min-width: 0; max-width: 100%; }
+  .brokers-content .iol-cards-mobile,
+  .brokers-content .iol-positions-desktop { min-width: 0; }
+
+  /* Cocos cash grid */
+  .cocos-cash-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .cocos-cash-item {
+    background: #f9fafb;
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .cocos-cash-item.ars { border-left-color: #10b981; }
+  .cocos-cash-item.usd { border-left-color: #1e3a8a; }
+  .cocos-cash-item .label {
+    color: #6b7280;
+    font-size: 0.82em;
+    margin-bottom: 4px;
+  }
+  .cocos-cash-item .value {
+    color: #1e3a8a;
+    font-size: 1.25em;
+    font-weight: 700;
+  }
+
+  /* Mobile: sidebar horizontal */
+  @media (max-width: 700px) {
+    .brokers-layout {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .brokers-sidebar {
+      flex-direction: row;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .broker-item {
+      flex: 0 0 auto;
+      min-width: 130px;
+      padding: 10px 12px;
+    }
+    .broker-name { font-size: 0.88em; }
+    .broker-total { font-size: 0.92em; }
+    .broker-status { font-size: 0.72em; }
+  }
+
   /* Cards de posiciones (visible solo en mobile via media query) */
   .iol-cards-mobile {
     display: none;
@@ -1207,7 +1376,7 @@
       <button class="tab-btn active" data-tab="gastos">Gastos</button>
       <button class="tab-btn" data-tab="calc">Calculadora</button>
       <button class="tab-btn" data-tab="historico">Histórico</button>
-      <button class="tab-btn" data-tab="inversiones">Inversiones</button>
+      <button class="tab-btn" data-tab="inversiones">Brokers</button>
     </nav>
 
     <!-- Tab: Gastos -->
@@ -1495,60 +1664,31 @@
     <!-- ========== Tab: Inversiones (IOL) ========== -->
     <section id="tab-inversiones" class="tab-content hidden">
 
-      <!-- Loader durante sync -->
+      <!-- Loader -->
       <div id="iol-loading" class="hidden" style="text-align: center; padding: 40px;">
         <div class="loader"></div>
-        <p style="margin-top: 12px; color: #6b7280;">Sincronizando con IOL...</p>
+        <p style="margin-top: 12px; color: #6b7280;">Cargando inversiones...</p>
       </div>
 
-      <!-- Estado: NO conectado -->
-      <div id="iol-not-connected" class="hidden">
-        <div class="panel" style="max-width: 480px; margin: 40px auto;">
-          <h3 style="margin-bottom: 8px;">Conectar tu cuenta de IOL</h3>
-          <p style="color: #6b7280; font-size: 0.9em; margin-bottom: 20px;">
-            Solo lectura. La app no opera, solo consulta tu portafolio.<br>
-            Tus credenciales se guardan encriptadas (AES-256) en Supabase.
+      <!-- Vista vacía: ningún broker tiene datos -->
+      <div id="brokers-empty" class="hidden">
+        <div class="panel" style="max-width: 540px; margin: 30px auto; text-align: center;">
+          <h3 style="margin-bottom: 12px;">Conectá tu primer broker</h3>
+          <p style="color: #6b7280; font-size: 0.93em; margin-bottom: 18px;">
+            Conectá IOL para sync automático, o importá un CSV de Cocos.
           </p>
-
-          <div id="iol-connect-error" class="auth-error hidden"></div>
-
-          <div class="calc-field">
-            <label for="iol-username">Usuario IOL</label>
-            <input type="text" id="iol-username" autocomplete="username">
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="selectBroker('iol')" style="width:auto; padding:10px 18px; margin:0;">Conectar IOL</button>
+            <button class="btn-primary" onclick="selectBroker('cocos')" style="width:auto; padding:10px 18px; margin:0; background:#10b981;">Importar Cocos</button>
           </div>
-          <div class="calc-field">
-            <label for="iol-password">Contraseña IOL</label>
-            <input type="password" id="iol-password" autocomplete="current-password">
-          </div>
-
-          <button id="iol-connect-btn" class="auth-btn" style="margin-top: 12px;">Conectar</button>
-
-          <p style="font-size: 0.78em; color: #9ca3af; margin-top: 14px;">
-            Necesitás tener las APIs habilitadas en IOL → Mi Cuenta → Personalización → APIs.
-          </p>
         </div>
       </div>
 
-      <!-- Estado: conectado -->
+      <!-- Dashboard principal (totales generales + sidebar + content) -->
       <div id="iol-dashboard" class="hidden">
 
-        <!-- Header con estado de conexión -->
-        <div class="panel iol-status-row">
-          <div>
-            <strong>IOL conectado:</strong> <span id="iol-username-display"></span>
-            <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
-              <span id="iol-last-sync">Sin sincronizar todavía</span>
-              <span id="iol-error-icon" class="iol-error-icon hidden" title="">!</span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button id="iol-refresh-btn" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px;">Refrescar</button>
-            <button id="iol-disconnect-btn" class="btn-ghost" style="color: #dc2626; border-color: #dc2626;">Desconectar</button>
-          </div>
-        </div>
-
-        <!-- Resumen summary cards -->
-        <div class="historico-summary">
+        <!-- TOTALES GENERALES (suma de todos los brokers) — ocultos por preferencia del user -->
+        <div class="historico-summary" style="display: none;">
           <div class="summary-card" style="border-color: #1e3a8a;">
             <div class="label">Total valorizado USD</div>
             <div class="value" id="iol-total-usd">USD 0</div>
@@ -1562,92 +1702,230 @@
             <div class="value" id="iol-ganancia">0%</div>
             <div class="sub" id="iol-ganancia-monto">USD 0</div>
           </div>
+          <div class="summary-card" style="border-color: #06b6d4;">
+            <div class="label">Disponible para operar</div>
+            <div class="value" id="iol-disponible-usd">USD 0</div>
+            <div class="sub" id="iol-disponible-ars">$0</div>
+          </div>
         </div>
 
-        <!-- Resumen por frasco -->
-        <div class="panel">
-          <h3>Por frasco</h3>
-          <div class="historico-summary">
+        <!-- POR FRASCO (todos los brokers) — layout compacto, label + valor en misma línea -->
+        <div class="panel" style="padding: 12px 16px;">
+          <div class="historico-summary frasco-compact" id="iol-frasco-summary">
             <div class="summary-card colchon">
-              <div class="label">Colchón</div>
-              <div class="value" id="iol-frasco-colchon">USD 0</div>
-              <div class="sub" id="iol-frasco-colchon-count">0 instrumentos</div>
+              <span class="label">Colchón</span>
+              <span class="value" id="iol-frasco-colchon">USD 0</span>
             </div>
             <div class="summary-card casa">
-              <div class="label">Frasco Casa</div>
-              <div class="value" id="iol-frasco-casa">USD 0</div>
-              <div class="sub" id="iol-frasco-casa-count">0 instrumentos</div>
+              <span class="label">Frasco Casa</span>
+              <span class="value" id="iol-frasco-casa">USD 0</span>
             </div>
             <div class="summary-card jubilacion">
-              <div class="label">Frasco Jubilación</div>
-              <div class="value" id="iol-frasco-jubilacion">USD 0</div>
-              <div class="sub" id="iol-frasco-jubilacion-count">0 instrumentos</div>
+              <span class="label">Frasco Jubilación</span>
+              <span class="value" id="iol-frasco-jubilacion">USD 0</span>
             </div>
             <div class="summary-card" style="border-color: #9ca3af;">
-              <div class="label">Sin asignar</div>
-              <div class="value" id="iol-frasco-libre">USD 0</div>
-              <div class="sub" id="iol-frasco-libre-count">0 instrumentos</div>
+              <span class="label">Sin asignar</span>
+              <span class="value" id="iol-frasco-libre">USD 0</span>
             </div>
           </div>
         </div>
 
-        <!-- Tabla de posiciones (desktop) + cards (mobile) -->
-        <div class="panel">
-          <h3>Posiciones</h3>
-          <!-- Cards mobile (visible solo en pantallas chicas) -->
-          <div id="iol-positions-cards" class="iol-cards-mobile"></div>
-          <!-- Tabla desktop -->
-          <div class="iol-positions-desktop" style="overflow-x: auto;">
-            <table class="historico-table" id="iol-positions-table">
-              <thead>
-                <tr>
-                  <th>Símbolo</th>
-                  <th>Descripción</th>
-                  <th>País</th>
-                  <th>Cantidad</th>
-                  <th>PPC</th>
-                  <th>Último</th>
-                  <th>Valorizado</th>
-                  <th>USD ≈</th>
-                  <th>Gan. %</th>
-                  <th>Frasco</th>
-                </tr>
-              </thead>
-              <tbody id="iol-positions-tbody"></tbody>
-              <tfoot>
-                <tr id="iol-positions-totals" class="totals-row"></tr>
-              </tfoot>
-            </table>
-          </div>
-          <div id="iol-positions-empty" class="info-box hidden" style="margin-top: 12px;">
-            No hay posiciones en tu cuenta de IOL.
-          </div>
-        </div>
+        <!-- Layout: sidebar de brokers + contenido del broker seleccionado -->
+        <div class="brokers-layout">
 
-        <!-- Saldos por cuenta -->
-        <div class="panel">
-          <h3>Saldos por cuenta</h3>
-          <div style="overflow-x: auto;">
-            <table class="historico-table" id="iol-balances-table">
-              <thead>
-                <tr>
-                  <th>Cuenta</th>
-                  <th>Tipo</th>
-                  <th>Moneda</th>
-                  <th>Disponible</th>
-                  <th>Saldo</th>
-                  <th>Títulos val.</th>
-                  <th>Total</th>
-                  <th>Total USD</th>
-                  <th>Total ARS</th>
-                </tr>
-              </thead>
-              <tbody id="iol-balances-tbody"></tbody>
-              <tfoot>
-                <tr id="iol-balances-totals" class="totals-row"></tr>
-              </tfoot>
-            </table>
-          </div>
+          <!-- Sidebar -->
+          <aside class="brokers-sidebar">
+            <button class="broker-item active" data-broker="iol">
+              <span class="broker-name">IOL</span>
+              <span class="broker-total" id="broker-iol-total">USD 0</span>
+              <span class="broker-status" id="broker-iol-status">Sin conectar</span>
+            </button>
+            <button class="broker-item" data-broker="cocos">
+              <span class="broker-name">Cocos</span>
+              <span class="broker-total" id="broker-cocos-total">USD 0</span>
+              <span class="broker-status" id="broker-cocos-status">Sin datos</span>
+            </button>
+          </aside>
+
+          <!-- Contenido del broker seleccionado -->
+          <main class="brokers-content">
+
+            <!-- === IOL VIEW === -->
+            <div id="broker-view-iol" class="broker-view">
+
+              <!-- Sub-estado: no conectado -->
+              <div id="iol-not-connected" class="hidden">
+                <div class="panel" style="max-width: 480px; margin: 0 auto;">
+                  <h3 style="margin-bottom: 8px;">Conectar tu cuenta de IOL</h3>
+                  <p style="color: #6b7280; font-size: 0.9em; margin-bottom: 20px;">
+                    Solo lectura. La app no opera, solo consulta tu portafolio.<br>
+                    Tus credenciales se guardan encriptadas (AES-256) en Supabase.
+                  </p>
+                  <div id="iol-connect-error" class="auth-error hidden"></div>
+                  <div class="calc-field">
+                    <label for="iol-username">Usuario IOL</label>
+                    <input type="text" id="iol-username" autocomplete="username">
+                  </div>
+                  <div class="calc-field">
+                    <label for="iol-password">Contraseña IOL</label>
+                    <input type="password" id="iol-password" autocomplete="current-password">
+                  </div>
+                  <button id="iol-connect-btn" class="auth-btn" style="margin-top: 12px;">Conectar</button>
+                  <p style="font-size: 0.78em; color: #9ca3af; margin-top: 14px;">
+                    Necesitás tener las APIs habilitadas en IOL → Mi Cuenta → Personalización → APIs.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Sub-estado: conectado -->
+              <div id="iol-connected" class="hidden">
+                <div class="panel iol-status-row">
+                  <div>
+                    <strong>IOL conectado:</strong> <span id="iol-username-display"></span>
+                    <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
+                      <span id="iol-last-sync">Sin sincronizar todavía</span>
+                      <span id="iol-error-icon" class="iol-error-icon hidden" title="">!</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button id="iol-refresh-btn" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px;">Refrescar</button>
+                    <button id="iol-disconnect-btn" class="btn-ghost" style="color: #dc2626; border-color: #dc2626;">Desconectar</button>
+                  </div>
+                </div>
+
+                <div class="panel">
+                  <h3>Posiciones</h3>
+                  <div id="iol-positions-cards" class="iol-cards-mobile"></div>
+                  <div class="iol-positions-desktop" style="overflow-x: auto;">
+                    <table class="historico-table" id="iol-positions-table">
+                      <thead>
+                        <tr>
+                          <th>Símbolo</th>
+                          <th>Descripción</th>
+                          <th>País</th>
+                          <th>Cantidad</th>
+                          <th>PPC</th>
+                          <th>Último</th>
+                          <th>Valorizado</th>
+                          <th>USD ≈</th>
+                          <th>Gan. %</th>
+                          <th>Frasco</th>
+                        </tr>
+                      </thead>
+                      <tbody id="iol-positions-tbody"></tbody>
+                      <tfoot>
+                        <tr id="iol-positions-totals" class="totals-row"></tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <div id="iol-positions-empty" class="info-box hidden" style="margin-top: 12px;">
+                    No hay posiciones en tu cuenta de IOL.
+                  </div>
+                </div>
+
+                <div class="panel">
+                  <h3>Saldos por cuenta</h3>
+                  <div style="overflow-x: auto;">
+                    <table class="historico-table" id="iol-balances-table">
+                      <thead>
+                        <tr>
+                          <th>Cuenta</th>
+                          <th>Tipo</th>
+                          <th>Moneda</th>
+                          <th>Disponible</th>
+                          <th>Saldo</th>
+                          <th>Títulos val.</th>
+                          <th>Total</th>
+                          <th>Total USD</th>
+                          <th>Total ARS</th>
+                        </tr>
+                      </thead>
+                      <tbody id="iol-balances-tbody"></tbody>
+                      <tfoot>
+                        <tr id="iol-balances-totals" class="totals-row"></tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- === COCOS VIEW === -->
+            <div id="broker-view-cocos" class="broker-view hidden">
+
+              <div class="panel iol-status-row">
+                <div>
+                  <strong>Cocos Capital</strong>
+                  <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
+                    <span id="external-last-update">Sin importaciones</span>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <label class="upload-button" style="padding: 8px 14px; font-size: 0.92em;">
+                    <span>Importar CSV</span>
+                    <input type="file" accept=".csv,.txt" hidden id="external-csv-upload">
+                  </label>
+                  <button id="external-clear-btn" class="btn-ghost" style="color: #dc2626; border-color: #dc2626;">Limpiar</button>
+                </div>
+              </div>
+
+              <!-- Posiciones Cocos -->
+              <div class="panel">
+                <h3>Posiciones</h3>
+                <div id="external-positions-cards" class="iol-cards-mobile"></div>
+                <div class="iol-positions-desktop" style="overflow-x:auto;">
+                  <table class="historico-table" id="external-positions-table">
+                    <thead>
+                      <tr>
+                        <th>Instrumento</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                        <th>Moneda</th>
+                        <th>Total</th>
+                        <th>USD ≈</th>
+                        <th>Frasco</th>
+                      </tr>
+                    </thead>
+                    <tbody id="external-positions-tbody"></tbody>
+                    <tfoot>
+                      <tr id="external-positions-totals" class="totals-row"></tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div id="external-positions-empty" class="info-box" style="margin-top: 12px; display: none;">
+                  No hay posiciones cargadas. Apretá <strong>Importar CSV</strong> y subí el archivo que descargás desde Cocos.
+                </div>
+              </div>
+
+              <!-- Saldos por cuenta — misma estructura que IOL -->
+              <div id="cocos-cash-panel" class="panel" style="display: none;">
+                <h3>Saldos por cuenta</h3>
+                <div style="overflow-x: auto;">
+                  <table class="historico-table" id="cocos-cash-table">
+                    <thead>
+                      <tr>
+                        <th>Cuenta</th>
+                        <th>Tipo</th>
+                        <th>Moneda</th>
+                        <th>Disponible</th>
+                        <th>Saldo</th>
+                        <th>Títulos val.</th>
+                        <th>Total</th>
+                        <th>Total USD</th>
+                        <th>Total ARS</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cocos-cash-tbody"></tbody>
+                    <tfoot>
+                      <tr id="cocos-cash-totals" class="totals-row"></tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </main>
         </div>
 
       </div>
@@ -3026,10 +3304,68 @@ async function callIolProxy(action, params = {}) {
   return data;
 }
 
+// view: 'loading' | 'empty' | 'dashboard'
 function showIolView(view) {
   document.getElementById('iol-loading').classList.toggle('hidden', view !== 'loading');
-  document.getElementById('iol-not-connected').classList.toggle('hidden', view !== 'not-connected');
+  document.getElementById('brokers-empty').classList.toggle('hidden', view !== 'empty');
   document.getElementById('iol-dashboard').classList.toggle('hidden', view !== 'dashboard');
+}
+
+// Estado del broker seleccionado (qué view mostrar en el content area)
+let selectedBroker = 'iol';
+
+function selectBroker(broker) {
+  selectedBroker = broker;
+  document.querySelectorAll('.broker-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.broker === broker);
+  });
+  document.querySelectorAll('.broker-view').forEach(view => {
+    view.classList.toggle('hidden', view.id !== 'broker-view-' + broker);
+  });
+  // Dentro del IOL view, mostrar sub-vista correcta (connect form o connected)
+  if (broker === 'iol') {
+    const iolConn = iolState.connected;
+    document.getElementById('iol-not-connected').classList.toggle('hidden', iolConn);
+    document.getElementById('iol-connected').classList.toggle('hidden', !iolConn);
+  }
+  // Si seleccionamos un broker desde la vista vacía, mostramos dashboard
+  if (!document.getElementById('brokers-empty').classList.contains('hidden')) {
+    showIolView('dashboard');
+  }
+}
+
+// Listeners de los botones del sidebar
+document.querySelectorAll('.broker-item').forEach(btn => {
+  btn.addEventListener('click', () => selectBroker(btn.dataset.broker));
+});
+
+function renderBrokerSidebar() {
+  const mep = iolState.mepRate || 1500;
+
+  // IOL total
+  let iolTotalUSD = 0;
+  for (const p of (iolState.positions || [])) {
+    const v = parseFloat(p.valorizado) || 0;
+    iolTotalUSD += p.moneda === 'dolar_Estadounidense' ? v : v / mep;
+  }
+  for (const b of (iolState.balances || [])) {
+    const d = parseFloat(b.disponible) || 0;
+    iolTotalUSD += b.moneda === 'dolar_Estadounidense' ? d : d / mep;
+  }
+  document.getElementById('broker-iol-total').textContent = formatUSD(iolTotalUSD);
+  document.getElementById('broker-iol-status').textContent =
+    iolState.connected ? 'Conectado' : 'Sin conectar';
+
+  // Cocos total
+  let cocosTotalUSD = 0;
+  for (const p of (iolState.external || [])) {
+    const t = parseFloat(p.total) || 0;
+    cocosTotalUSD += p.moneda === 'USD' ? t : t / mep;
+  }
+  document.getElementById('broker-cocos-total').textContent = formatUSD(cocosTotalUSD);
+  const lastImport = iolState.external?.[0]?.snapshot_at;
+  document.getElementById('broker-cocos-status').textContent =
+    lastImport ? ('Import: ' + relativeTime(lastImport)) : 'Sin datos';
 }
 
 function relativeTime(isoDate) {
@@ -3128,28 +3464,360 @@ async function fetchLatestPortfolioDirect() {
 async function loadAndRenderIol() {
   showIolView('loading');
   try {
-    const [portfolio, mapping, cfg] = await Promise.all([
-      fetchLatestPortfolioDirect(),   // <-- antes: callIolProxy('get_latest_portfolio')
+    const [portfolio, mapping, cfg, externalPositions] = await Promise.all([
+      fetchLatestPortfolioDirect(),
       fetchIolMapping(),
-      fetchUserConfig()
+      fetchUserConfig(),
+      fetchExternalPositionsLatest('cocos')
     ]);
     iolState = {
       ...iolState,
       ...portfolio,
       mapping,
-      mepRate: (cfg?.default_mep) || 1500
+      mepRate: (cfg?.default_mep) || 1500,
+      external: externalPositions
     };
-    if (!portfolio.connected) {
-      showIolView('not-connected');
+
+    const hasIol = portfolio.connected;
+    const hasCocos = externalPositions.length > 0;
+
+    if (!hasIol && !hasCocos) {
+      showIolView('empty');
     } else {
       showIolView('dashboard');
       renderIolDashboard();
+      renderBrokerSidebar();
+      // Mostrar el broker seleccionado correctamente
+      selectBroker(selectedBroker || (hasIol ? 'iol' : 'cocos'));
     }
+    renderExternalPositions();
   } catch (err) {
-    showIolView('not-connected');
+    showIolView('empty');
     showToast('Error cargando inversiones: ' + err.message, 'error');
   }
 }
+
+// ===== Posiciones externas (Cocos, etc.) =====
+async function fetchExternalPositionsLatest(broker) {
+  if (!currentUser) return [];
+  const { data: latest } = await sb
+    .from('external_positions')
+    .select('snapshot_at')
+    .eq('user_id', currentUser.id)
+    .eq('broker', broker)
+    .order('snapshot_at', { ascending: false })
+    .limit(1);
+  const latestSnap = latest?.[0]?.snapshot_at;
+  if (!latestSnap) return [];
+  const { data } = await sb
+    .from('external_positions')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .eq('broker', broker)
+    .eq('snapshot_at', latestSnap);
+  return data || [];
+}
+
+// Parser del CSV de Cocos: separador ;, decimal con coma
+function parseCocosCSV(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  // Buscar línea con encabezados (contiene "instrumento")
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(lines.length, 5); i++) {
+    if (/instrumento/i.test(lines[i])) { headerIdx = i; break; }
+  }
+  if (headerIdx < 0) throw new Error('No se encontró encabezado "instrumento" en el CSV');
+
+  const parseNumAR = s => {
+    if (s === null || s === undefined) return 0;
+    const cleaned = String(s).trim().replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned) || 0;
+  };
+
+  const rows = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const cols = lines[i].split(';').map(c => c.trim());
+    if (cols.length < 5) continue;
+    const instrumento = cols[0];
+    if (!instrumento) continue;
+    // Extraer símbolo si está entre paréntesis al final (ej "FCI ... (COCOAUSD)")
+    const m = instrumento.match(/\(([A-Z0-9_]+)\)\s*$/);
+    const simbolo = m ? m[1] : (['ARS', 'USD'].includes(instrumento) ? instrumento : '');
+    rows.push({
+      instrumento,
+      simbolo,
+      cantidad: parseNumAR(cols[1]),
+      precio: parseNumAR(cols[2]),
+      moneda: cols[3].toUpperCase(),
+      total: parseNumAR(cols[4])
+    });
+  }
+  return rows;
+}
+
+async function importCocosCSV(file) {
+  if (!currentUser) return;
+  const text = await file.text();
+  let rows;
+  try {
+    rows = parseCocosCSV(text);
+  } catch (err) {
+    showToast('Error parseando CSV: ' + err.message, 'error');
+    return;
+  }
+  if (rows.length === 0) {
+    showToast('CSV vacío o sin posiciones', 'error');
+    return;
+  }
+  // Borrar snapshots previos de Cocos (reemplazo total)
+  await sb.from('external_positions')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .eq('broker', 'cocos');
+
+  const insertRows = rows.map(r => ({
+    user_id: currentUser.id,
+    broker: 'cocos',
+    instrumento: r.instrumento,
+    simbolo: r.simbolo,
+    cantidad: r.cantidad,
+    precio: r.precio,
+    moneda: r.moneda,
+    total: r.total,
+    raw: r
+  }));
+  const { error } = await sb.from('external_positions').insert(insertRows);
+  if (error) {
+    showToast('Error guardando: ' + error.message, 'error');
+    return;
+  }
+  showToast(`Importadas ${rows.length} posiciones de Cocos`, 'success');
+  await loadAndRenderIol();
+}
+
+async function clearExternal(broker) {
+  if (!currentUser) return;
+  if (!confirm(`¿Limpiar todas las posiciones importadas de ${broker}?`)) return;
+  await sb.from('external_positions')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .eq('broker', broker);
+  showToast(broker + ' limpiado', 'success');
+  await loadAndRenderIol();
+}
+
+// Distingue cash (saldo disponible) de instrumentos reales en el CSV de Cocos
+function isCashPosition(p) {
+  return (p.simbolo === 'ARS' || p.simbolo === 'USD' || p.instrumento === 'ARS' || p.instrumento === 'USD')
+    && parseFloat(p.precio) === 1;
+}
+
+function renderExternalPositions() {
+  const tbody = document.getElementById('external-positions-tbody');
+  const cardsEl = document.getElementById('external-positions-cards');
+  const totalsRow = document.getElementById('external-positions-totals');
+  const emptyEl = document.getElementById('external-positions-empty');
+  const lastUpdateEl = document.getElementById('external-last-update');
+  const cashPanel = document.getElementById('cocos-cash-panel');
+  const cashTbody = document.getElementById('cocos-cash-tbody');
+  const cashTotals = document.getElementById('cocos-cash-totals');
+  tbody.innerHTML = '';
+  cardsEl.innerHTML = '';
+  totalsRow.innerHTML = '';
+  if (cashTbody) cashTbody.innerHTML = '';
+  if (cashTotals) cashTotals.innerHTML = '';
+
+  const all = iolState.external || [];
+
+  if (all.length === 0) {
+    emptyEl.style.display = 'block';
+    lastUpdateEl.textContent = 'Sin importaciones';
+    if (cashPanel) cashPanel.style.display = 'none';
+    return;
+  }
+  lastUpdateEl.textContent = 'Último import: ' + relativeTime(all[0].snapshot_at);
+
+  // Separar cash de instrumentos
+  const cashRows = all.filter(isCashPosition);
+  const positions = all.filter(p => !isCashPosition(p));
+
+  // Render Saldos por cuenta — misma estructura que IOL.
+  // Títulos val. = suma de instrumentos en la misma moneda.
+  // Total = Saldo (cash) + Títulos val. (instrumentos).
+  const mepLocal = iolState.mepRate || 1500;
+  const cashByMoneda = { ARS: 0, USD: 0 };
+  cashRows.forEach(c => {
+    const total = parseFloat(c.total) || 0;
+    if (c.moneda === 'USD') cashByMoneda.USD += total; else cashByMoneda.ARS += total;
+  });
+  const titulosByMoneda = { ARS: 0, USD: 0 };
+  positions.forEach(p => {
+    const total = parseFloat(p.total) || 0;
+    if (p.moneda === 'USD') titulosByMoneda.USD += total; else titulosByMoneda.ARS += total;
+  });
+  const monedasUsadas = ['ARS', 'USD'].filter(m => cashByMoneda[m] > 0 || titulosByMoneda[m] > 0);
+
+  if (monedasUsadas.length > 0 && cashTbody) {
+    cashPanel.style.display = '';
+    let cashTotalUSD = 0, cashTotalARS = 0;
+    monedasUsadas.forEach(moneda => {
+      const isUSD = moneda === 'USD';
+      const saldo = cashByMoneda[moneda];
+      const titulosVal = titulosByMoneda[moneda];
+      const totalCuenta = saldo + titulosVal;
+      const totalUSD = isUSD ? totalCuenta : totalCuenta / mepLocal;
+      const totalARS = isUSD ? totalCuenta * mepLocal : totalCuenta;
+      cashTotalUSD += totalUSD;
+      cashTotalARS += totalARS;
+      const fmt = v => isUSD ? formatUSD(v) : formatARS(v);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>—</td>
+        <td>${isUSD ? 'Inversión USD' : 'Inversión AR$'}</td>
+        <td>${moneda}</td>
+        <td>${fmt(saldo)}</td>
+        <td>${fmt(saldo)}</td>
+        <td>${fmt(titulosVal)}</td>
+        <td><strong>${fmt(totalCuenta)}</strong></td>
+        <td>${formatUSD(totalUSD)}</td>
+        <td>${formatARS(totalARS)}</td>
+      `;
+      cashTbody.appendChild(tr);
+    });
+    cashTotals.innerHTML = `
+      <td colspan="7" class="totals-label">TOTAL (al MEP $${formatNumberAR(mepLocal)})</td>
+      <td class="grand-total"><strong>${formatUSD(cashTotalUSD)}</strong></td>
+      <td class="grand-total"><strong>${formatARS(cashTotalARS)}</strong></td>
+    `;
+  } else if (cashPanel) {
+    cashPanel.style.display = 'none';
+  }
+
+  if (positions.length === 0) {
+    emptyEl.style.display = 'block';
+    emptyEl.innerHTML = 'Solo se importaron saldos en efectivo. No hay otros instrumentos.';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const mep = iolState.mepRate || 1500;
+  let grandTotalUSD = 0;
+  let grandTotalARS = 0;
+
+  positions.forEach(p => {
+    const total = parseFloat(p.total) || 0;
+    const isUSD = p.moneda === 'USD';
+    const totalUSD = isUSD ? total : total / mep;
+    const totalARS = isUSD ? total * mep : total;
+    grandTotalUSD += totalUSD;
+    grandTotalARS += totalARS;
+
+    // === Fila de tabla (desktop) ===
+    const tr = document.createElement('tr');
+    const fmtNum = v => formatNumberAR(parseFloat(v) || 0);
+    tr.innerHTML = `
+      <td><strong>${p.simbolo || ''}</strong>
+        <div style="font-size: 0.78em; color: #6b7280; max-width: 280px; overflow: hidden; text-overflow: ellipsis;">${p.instrumento}</div>
+      </td>
+      <td>${fmtNum(p.cantidad)}</td>
+      <td>${fmtNum(p.precio)}</td>
+      <td>${p.moneda}</td>
+      <td><strong>${isUSD ? formatUSD(total) : formatARS(total)}</strong></td>
+      <td style="color:#1e3a8a;">${formatUSD(totalUSD)}</td>
+      <td></td>
+    `;
+
+    // Frasco selector
+    const select = buildFrascoSelect(p.simbolo);
+    tr.lastElementChild.appendChild(select);
+    tbody.appendChild(tr);
+
+    // === Card (mobile) ===
+    const card = document.createElement('div');
+    card.className = 'iol-position-card';
+    const currentFrascoMobile = iolState.mapping[p.simbolo] || '';
+    if (currentFrascoMobile) card.classList.add('frasco-' + currentFrascoMobile);
+    card.innerHTML = `
+      <div class="card-top">
+        <div style="min-width:0; flex:1;">
+          <div class="card-symbol">${p.simbolo || ''}</div>
+          <div class="card-desc">${p.instrumento}</div>
+        </div>
+        <div class="card-value-right">
+          <div class="card-usd">${formatUSD(totalUSD)}</div>
+          <div class="card-orig">${isUSD ? 'USD' : '$'} ${fmtNum(total)}</div>
+        </div>
+      </div>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <span class="card-meta-label">Cantidad</span>
+          <span class="card-meta-value">${fmtNum(p.cantidad)}</span>
+        </div>
+        <div class="card-meta-item">
+          <span class="card-meta-label">Precio</span>
+          <span class="card-meta-value">${fmtNum(p.precio)}</span>
+        </div>
+        <div class="card-meta-item card-frasco"></div>
+      </div>
+    `;
+    const cardSelect = buildFrascoSelect(p.simbolo);
+    cardSelect.classList.add('card-select');
+    card.querySelector('.card-frasco').appendChild(cardSelect);
+    // Sincronizar ambos selects
+    cardSelect.addEventListener('change', e => {
+      select.value = e.target.value;
+      select.dispatchEvent(new Event('change', { bubbles: false }));
+    });
+    select.addEventListener('change', () => { cardSelect.value = select.value; });
+    cardsEl.appendChild(card);
+  });
+
+  // Total row: dejamos "Total" (moneda original) vacía porque mezcla monedas.
+  // Mostramos USD prominente con ARS abajo como subdato.
+  totalsRow.innerHTML = `
+    <td colspan="5" class="totals-label">TOTAL COCOS (al MEP $${formatNumberAR(mep)})</td>
+    <td class="grand-total">
+      <strong>${formatUSD(grandTotalUSD)}</strong>
+      <div style="font-weight: 500; font-size: 0.78em; color: #4b5563; margin-top: 2px;">${formatARS(grandTotalARS)}</div>
+    </td>
+    <td></td>
+  `;
+}
+
+// Construir un <select> de frasco con la lógica de mapping ya conectada
+function buildFrascoSelect(simbolo) {
+  const select = document.createElement('select');
+  select.className = 'iol-frasco-select';
+  select.innerHTML = `
+    <option value="">— Sin asignar —</option>
+    <option value="colchon">Colchón</option>
+    <option value="casa">Frasco Casa</option>
+    <option value="jubilacion">Frasco Jubilación</option>
+  `;
+  const currentFrasco = iolState.mapping[simbolo] || '';
+  select.value = currentFrasco;
+  if (currentFrasco) select.classList.add(currentFrasco);
+
+  select.addEventListener('change', async (e) => {
+    const newFrasco = e.target.value;
+    select.classList.remove('colchon', 'casa', 'jubilacion');
+    if (newFrasco) select.classList.add(newFrasco);
+    await setIolMapping(simbolo, newFrasco || null);
+    renderIolFrascoSummary(); // refrescar totales por frasco que ahora incluyen Cocos
+  });
+  return select;
+}
+
+// Wire-up del CSV upload + botón limpiar
+document.getElementById('external-csv-upload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) importCocosCSV(file);
+  e.target.value = '';
+});
+document.getElementById('external-clear-btn').addEventListener('click', () => {
+  const broker = document.getElementById('external-broker-select').value;
+  clearExternal(broker);
+});
 
 function renderIolDashboard() {
   document.getElementById('iol-username-display').textContent = iolState.username || '';
@@ -3175,6 +3843,7 @@ function renderIolDashboard() {
   // - Posiciones en ARS (CEDEARs como SPYD, QQQD): valorizado en pesos, dividir por MEP
   const mep = iolState.mepRate || 1500;
   let totalUSD = 0, totalARSFace = 0, gananciaUSD = 0, costoUSD = 0;
+  let disponibleUSD = 0, disponibleARS = 0;
   for (const p of iolState.positions) {
     const val = parseFloat(p.valorizado) || 0;
     const gan = parseFloat(p.ganancia_dinero) || 0;
@@ -3193,19 +3862,43 @@ function renderIolDashboard() {
       costoUSD += costo / mep;
     }
   }
-  // Sumar saldos disponibles (también convertidos a USD)
+  // Sumar saldos en cuentas IOL (uso `saldo` — cash en cuenta — no `disponible`
+  // que es lo libre para operar JUSTO AHORA y puede ser negativo por T+2 / comprometidos)
   for (const b of iolState.balances) {
-    const disp = parseFloat(b.disponible) || 0;
+    const saldo = parseFloat(b.saldo) || 0;
     if (b.moneda === 'dolar_Estadounidense') {
-      totalUSD += disp;
+      totalUSD += saldo;
+      disponibleUSD += saldo;
+      disponibleARS += saldo * mep;
     } else {
-      totalUSD += disp / mep;
-      totalARSFace += disp;
+      totalUSD += saldo / mep;
+      totalARSFace += saldo;
+      disponibleUSD += saldo / mep;
+      disponibleARS += saldo;
+    }
+  }
+
+  // Sumar posiciones externas (Cocos u otros brokers importados por CSV)
+  // Cash rows (ARS/USD del CSV) van también al "Disponible para operar"
+  for (const p of (iolState.external || [])) {
+    const total = parseFloat(p.total) || 0;
+    if (p.moneda === 'USD') {
+      totalUSD += total;
+      totalARSFace += total * mep;
+    } else {
+      totalUSD += total / mep;
+      totalARSFace += total;
+    }
+    if (isCashPosition(p)) {
+      if (p.moneda === 'USD') { disponibleUSD += total; disponibleARS += total * mep; }
+      else { disponibleUSD += total / mep; disponibleARS += total; }
     }
   }
 
   document.getElementById('iol-total-usd').textContent = formatUSD(totalUSD);
   document.getElementById('iol-total-ars').textContent = formatARS(totalARSFace);
+  document.getElementById('iol-disponible-usd').textContent = formatUSD(disponibleUSD);
+  document.getElementById('iol-disponible-ars').textContent = formatARS(disponibleARS);
 
   const ganPct = costoUSD > 0 ? (gananciaUSD / costoUSD) * 100 : 0;
   const ganEl = document.getElementById('iol-ganancia');
@@ -3363,10 +4056,13 @@ function renderIolPositions() {
   const ganClass = totalGanPct >= 0 ? 'iol-positive' : 'iol-negative';
   const ganPctText = (totalGanPct >= 0 ? '+' : '') + totalGanPct.toFixed(1) + '%';
   const ganUsdText = (totalGananciaUSD >= 0 ? '+' : '') + formatUSD(totalGananciaUSD);
+  // Total row: dejamos "Valorizado" (moneda original) vacío porque mezcla monedas.
   totalsRow.innerHTML = `
-    <td colspan="6" class="totals-label">TOTAL POSICIONES (al MEP $${formatNumberAR(mep)})</td>
-    <td><strong>${formatARS(grandTotalARS)}</strong></td>
-    <td class="grand-total"><strong>${formatUSD(grandTotalUSD)}</strong></td>
+    <td colspan="7" class="totals-label">TOTAL POSICIONES (al MEP $${formatNumberAR(mep)})</td>
+    <td class="grand-total">
+      <strong>${formatUSD(grandTotalUSD)}</strong>
+      <div style="font-weight: 500; font-size: 0.78em; color: #4b5563; margin-top: 2px;">${formatARS(grandTotalARS)}</div>
+    </td>
     <td class="${ganClass}"><strong>${ganPctText}</strong><br><span style="font-size: 0.82em; font-weight: 500;">${ganUsdText}</span></td>
     <td></td>
   `;
@@ -3432,22 +4128,36 @@ function renderIolFrascoSummary() {
   const mep = iolState.mepRate || 1500;
   const sums = { colchon: 0, casa: 0, jubilacion: 0, libre: 0 };
   const counts = { colchon: 0, casa: 0, jubilacion: 0, libre: 0 };
+  // Posiciones IOL
   for (const p of iolState.positions) {
     const val = parseFloat(p.valorizado) || 0;
-    // Convertir todo a USD: si está en pesos, dividir por MEP
     const valUsd = p.moneda === 'dolar_Estadounidense' ? val : val / mep;
     const frasco = iolState.mapping[p.simbolo] || 'libre';
     sums[frasco] = (sums[frasco] || 0) + valUsd;
     counts[frasco] = (counts[frasco] || 0) + 1;
   }
-  document.getElementById('iol-frasco-colchon').textContent = formatUSD(sums.colchon);
-  document.getElementById('iol-frasco-colchon-count').textContent = counts.colchon + ' instrumento' + (counts.colchon !== 1 ? 's' : '');
-  document.getElementById('iol-frasco-casa').textContent = formatUSD(sums.casa);
-  document.getElementById('iol-frasco-casa-count').textContent = counts.casa + ' instrumento' + (counts.casa !== 1 ? 's' : '');
-  document.getElementById('iol-frasco-jubilacion').textContent = formatUSD(sums.jubilacion);
-  document.getElementById('iol-frasco-jubilacion-count').textContent = counts.jubilacion + ' instrumento' + (counts.jubilacion !== 1 ? 's' : '');
-  document.getElementById('iol-frasco-libre').textContent = formatUSD(sums.libre);
-  document.getElementById('iol-frasco-libre-count').textContent = counts.libre + ' instrumento' + (counts.libre !== 1 ? 's' : '');
+  // Posiciones externas (Cocos, etc.) — usan el mismo mapping por símbolo
+  // Excluyo cash (ARS/USD disponible) porque no es un instrumento
+  for (const p of (iolState.external || [])) {
+    if (isCashPosition(p)) continue;
+    const total = parseFloat(p.total) || 0;
+    const valUsd = p.moneda === 'USD' ? total : total / mep;
+    const frasco = iolState.mapping[p.simbolo] || 'libre';
+    sums[frasco] = (sums[frasco] || 0) + valUsd;
+    counts[frasco] = (counts[frasco] || 0) + 1;
+  }
+  const setText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  setText('iol-frasco-colchon', formatUSD(sums.colchon));
+  setText('iol-frasco-colchon-count', counts.colchon + ' instrumento' + (counts.colchon !== 1 ? 's' : ''));
+  setText('iol-frasco-casa', formatUSD(sums.casa));
+  setText('iol-frasco-casa-count', counts.casa + ' instrumento' + (counts.casa !== 1 ? 's' : ''));
+  setText('iol-frasco-jubilacion', formatUSD(sums.jubilacion));
+  setText('iol-frasco-jubilacion-count', counts.jubilacion + ' instrumento' + (counts.jubilacion !== 1 ? 's' : ''));
+  setText('iol-frasco-libre', formatUSD(sums.libre));
+  setText('iol-frasco-libre-count', counts.libre + ' instrumento' + (counts.libre !== 1 ? 's' : ''));
 }
 
 // Connect
