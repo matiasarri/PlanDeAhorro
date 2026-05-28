@@ -67,6 +67,44 @@
     outline: none;
     border-color: #3b82f6;
   }
+  /* Password field con botón "ver" */
+  .password-field {
+    position: relative;
+  }
+  .password-field input {
+    padding-right: 44px !important;
+  }
+  /* Ocultar el icono "revelar" nativo de Edge/IE (que choca con el nuestro) */
+  .password-field input::-ms-reveal,
+  .password-field input::-ms-clear {
+    display: none !important;
+    width: 0;
+    height: 0;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .password-toggle:hover {
+    color: #1e3a8a;
+    background: #f3f4f6;
+  }
+  .password-toggle svg {
+    width: 20px;
+    height: 20px;
+  }
   .auth-btn {
     width: 100%;
     background: #1e3a8a;
@@ -1039,7 +1077,34 @@
     </div>
     <div class="auth-field">
       <label for="auth-password">Contraseña</label>
-      <input type="password" id="auth-password" autocomplete="current-password" required minlength="6">
+      <div class="password-field">
+        <input type="password" id="auth-password" autocomplete="current-password" required minlength="6">
+        <button type="button" class="password-toggle" data-target="auth-password" aria-label="Mostrar contraseña">
+          <svg class="eye-show" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          </svg>
+          <svg class="eye-hide" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="display:none;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.244 7.244 3.236 3.236M3 3l3.228 3.228m0 0L18.772 18.772M9.879 9.879a3 3 0 1 0 4.242 4.242M9.879 9.879 14.12 14.12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="auth-field auth-signup-only" id="auth-password-confirm-field" style="display: none;">
+      <label for="auth-password-confirm">Repetir contraseña</label>
+      <div class="password-field">
+        <input type="password" id="auth-password-confirm" autocomplete="new-password" minlength="6">
+        <button type="button" class="password-toggle" data-target="auth-password-confirm" aria-label="Mostrar contraseña">
+          <svg class="eye-show" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          </svg>
+          <svg class="eye-hide" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="display:none;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.244 7.244 3.236 3.236M3 3l3.228 3.228m0 0L18.772 18.772M9.879 9.879a3 3 0 1 0 4.242 4.242M9.879 9.879 14.12 14.12" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <button id="auth-submit" class="auth-btn">Iniciar sesión</button>
@@ -1553,6 +1618,20 @@ function showLoader(show) {
   document.getElementById('loader').classList.toggle('hidden', !show);
 }
 
+// Toggle ojo en cualquier .password-toggle de la pantalla de auth
+document.querySelectorAll('.password-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const input = document.getElementById(targetId);
+    if (!input) return;
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.querySelector('.eye-show').style.display = showing ? 'block' : 'none';
+    btn.querySelector('.eye-hide').style.display = showing ? 'none' : 'block';
+    btn.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+  });
+});
+
 /* =====================================================
    STATE
    ===================================================== */
@@ -1572,6 +1651,7 @@ let authMode = 'signin'; // 'signin' o 'signup'
 
 function setAuthMode(mode) {
   authMode = mode;
+  const confirmField = document.getElementById('auth-password-confirm-field');
   if (mode === 'signin') {
     document.getElementById('auth-title').textContent = 'Iniciar sesión';
     document.getElementById('auth-subtitle').textContent = 'Accedé a tus gastos y plan de ahorro.';
@@ -1579,6 +1659,8 @@ function setAuthMode(mode) {
     document.getElementById('auth-switch-text').textContent = '¿No tenés cuenta?';
     document.getElementById('auth-switch-link').textContent = 'Registrate';
     document.getElementById('auth-password').autocomplete = 'current-password';
+    confirmField.style.display = 'none';
+    document.getElementById('auth-password-confirm').value = '';
   } else {
     document.getElementById('auth-title').textContent = 'Crear cuenta';
     document.getElementById('auth-subtitle').textContent = 'Vas a poder usar la app desde cualquier dispositivo con esta cuenta.';
@@ -1586,6 +1668,7 @@ function setAuthMode(mode) {
     document.getElementById('auth-switch-text').textContent = '¿Ya tenés cuenta?';
     document.getElementById('auth-switch-link').textContent = 'Iniciá sesión';
     document.getElementById('auth-password').autocomplete = 'new-password';
+    confirmField.style.display = '';
   }
   document.getElementById('auth-error').classList.add('hidden');
   document.getElementById('auth-success').classList.add('hidden');
@@ -1596,7 +1679,7 @@ document.getElementById('auth-switch-link').addEventListener('click', () => {
 });
 
 document.getElementById('auth-submit').addEventListener('click', handleAuthSubmit);
-['auth-email', 'auth-password'].forEach(id => {
+['auth-email', 'auth-password', 'auth-password-confirm'].forEach(id => {
   document.getElementById(id).addEventListener('keypress', e => {
     if (e.key === 'Enter') handleAuthSubmit();
   });
@@ -1619,6 +1702,21 @@ async function handleAuthSubmit() {
     errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
     errEl.classList.remove('hidden');
     return;
+  }
+
+  // Validar coincidencia de password en signup
+  if (authMode === 'signup') {
+    const passwordConfirm = document.getElementById('auth-password-confirm').value;
+    if (!passwordConfirm) {
+      errEl.textContent = 'Repetí la contraseña para confirmar.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      errEl.textContent = 'Las contraseñas no coinciden.';
+      errEl.classList.remove('hidden');
+      return;
+    }
   }
 
   const btn = document.getElementById('auth-submit');
