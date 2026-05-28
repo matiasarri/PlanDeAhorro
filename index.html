@@ -591,6 +591,7 @@
     border-left: 5px solid;
     margin-bottom: 9px;
   }
+  .calc-row.diario { border-color: #06b6d4; }
   .calc-row.colchon { border-color: #f59e0b; }
   .calc-row.casa { border-color: #10b981; }
   .calc-row.jubilacion { border-color: #8b5cf6; }
@@ -603,6 +604,7 @@
     font-weight: 600;
     color: white;
   }
+  .badge.diario { background: #06b6d4; }
   .badge.colchon { background: #f59e0b; }
   .badge.casa { background: #10b981; }
   .badge.jubilacion { background: #8b5cf6; }
@@ -1272,6 +1274,12 @@
           </div>
 
           <div class="calc-field">
+            <label for="reserva-diaria">Reserva uso diario (ARS)</label>
+            <input type="text" inputmode="decimal" id="reserva-diaria" value="750.000">
+            <small>Plata que se queda en pesos para gastos del día a día (Mercado Libre, banco). Se descuenta del excedente antes de distribuir entre los 3 frascos de ahorro.</small>
+          </div>
+
+          <div class="calc-field">
             <label>Fase del plan</label>
             <div class="radio-group">
               <label class="radio-label selected">
@@ -1297,6 +1305,16 @@
             <div class="calc-diff" id="excedente-diff"></div>
           </div>
 
+          <div class="calc-row diario">
+            <div class="calc-row-header">
+              <span class="badge diario">Frasco Uso Diario</span>
+              <span class="calc-pct" id="pct-diario">15%</span>
+            </div>
+            <div class="calc-row-value">
+              <div class="calc-ars" id="diario-ars">$0</div>
+              <div class="calc-usd" id="diario-usd">≈ USD 0</div>
+            </div>
+          </div>
           <div class="calc-row colchon">
             <div class="calc-row-header">
               <span class="badge colchon">Colchón</span>
@@ -2433,23 +2451,36 @@ function calcular() {
   const mep = parseARS(document.getElementById('mep').value) || 1;
   const fase = document.querySelector('input[name="fase"]:checked').value;
 
+  // Reserva uso diario: monto fijo en ARS (cap a excedente si es mayor)
+  let reservaDiariaInput = parseARS(document.getElementById('reserva-diaria').value);
+  if (isNaN(reservaDiariaInput) || reservaDiariaInput < 0) reservaDiariaInput = 0;
+
   document.getElementById('gastos-total').textContent = formatARS(gastos);
 
   const excedente = ingreso - gastos;
   const target = ingreso * TARGET_PCT;
   const diff = excedente - target;
 
+  // Frasco Uso Diario (no puede ser más que el excedente disponible)
+  const diarioArs = Math.min(Math.max(0, excedente), reservaDiariaInput);
+  // Lo que queda después del diario se reparte entre los 3 frascos de ahorro
+  const restoExcedente = Math.max(0, excedente) - diarioArs;
+  // % efectivo del diario sobre excedente (para mostrar)
+  const reservaPct = excedente > 0 ? diarioArs / excedente : 0;
+
   let pctC, pctK, pctJ;
   if (fase === '1') { pctC = 0.25; pctK = 0.50; pctJ = 0.25; }
   else { pctC = 0; pctK = 0.70; pctJ = 0.30; }
 
-  document.getElementById('pct-colchon').textContent = (pctC * 100) + '%';
-  document.getElementById('pct-casa').textContent = (pctK * 100) + '%';
-  document.getElementById('pct-jubilacion').textContent = (pctJ * 100) + '%';
+  // Mostrar % efectivo sobre excedente total para que sumen 100%
+  document.getElementById('pct-diario').textContent = (reservaPct * 100).toFixed(0) + '%';
+  document.getElementById('pct-colchon').textContent = (pctC * (1 - reservaPct) * 100).toFixed(0) + '%';
+  document.getElementById('pct-casa').textContent = (pctK * (1 - reservaPct) * 100).toFixed(0) + '%';
+  document.getElementById('pct-jubilacion').textContent = (pctJ * (1 - reservaPct) * 100).toFixed(0) + '%';
 
-  const colArs = Math.max(0, excedente) * pctC;
-  const casArs = Math.max(0, excedente) * pctK;
-  const jubArs = Math.max(0, excedente) * pctJ;
+  const colArs = restoExcedente * pctC;
+  const casArs = restoExcedente * pctK;
+  const jubArs = restoExcedente * pctJ;
 
   document.getElementById('excedente-ars').textContent = formatARS(excedente);
   document.getElementById('excedente-usd').textContent = '≈ ' + formatUSD(excedente / mep);
@@ -2478,6 +2509,8 @@ function calcular() {
     }
   }
 
+  document.getElementById('diario-ars').textContent = formatARS(diarioArs);
+  document.getElementById('diario-usd').textContent = '≈ ' + formatUSD(diarioArs / mep);
   document.getElementById('colchon-ars').textContent = formatARS(colArs);
   document.getElementById('colchon-usd').textContent = '≈ ' + formatUSD(colArs / mep);
   document.getElementById('casa-ars').textContent = formatARS(casArs);
@@ -2488,7 +2521,11 @@ function calcular() {
   // Persistir preferencias del usuario (debounced via timer simple)
   clearTimeout(window._configSaveTimer);
   window._configSaveTimer = setTimeout(() => {
-    upsertUserConfig({ default_ingreso: ingreso, default_mep: mep });
+    upsertUserConfig({
+      default_ingreso: ingreso,
+      default_mep: mep,
+      reserva_diaria_ars: reservaDiariaInput
+    });
   }, 1500);
 }
 
@@ -2602,6 +2639,13 @@ document.querySelectorAll('input[name="fase"]').forEach(el => {
     const n = parseARS(el.value);
     el.value = n > 0 ? formatNumberAR(n) : '';
   });
+});
+
+// Input de reserva uso diario (monto en ARS)
+document.getElementById('reserva-diaria').addEventListener('input', calcular);
+document.getElementById('reserva-diaria').addEventListener('blur', e => {
+  const n = parseARS(e.target.value);
+  e.target.value = n > 0 ? formatNumberAR(n) : '';
 });
 
 /* =====================================================
@@ -2769,6 +2813,9 @@ async function initApp() {
     if (cfg) {
       if (cfg.default_ingreso) document.getElementById('ingreso').value = formatNumberAR(cfg.default_ingreso);
       if (cfg.default_mep) document.getElementById('mep').value = formatNumberAR(cfg.default_mep);
+      if (cfg.reserva_diaria_ars !== null && cfg.reserva_diaria_ars !== undefined) {
+        document.getElementById('reserva-diaria').value = formatNumberAR(cfg.reserva_diaria_ars);
+      }
     }
     // Aplicar permisos de rol (gastos_only por defecto si no hay config — más seguro)
     applyRolePermissions(cfg?.role || 'gastos_only');
