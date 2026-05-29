@@ -309,7 +309,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85em;
-    min-width: 1100px;
+    min-width: 1800px;
   }
   .gastos-table th {
     background: #1e3a8a;
@@ -320,9 +320,74 @@
     font-size: 0.85em;
     white-space: nowrap;
   }
-  .gastos-table th.col-concepto { text-align: left; min-width: 160px; padding-left: 12px; }
-  .gastos-table th.col-codigo { text-align: left; min-width: 110px; }
-  .gastos-table th.col-total { background: #1e40af; }
+  .gastos-table th.col-concepto { text-align: left; min-width: 200px; max-width: 220px; padding-left: 12px; }
+  .gastos-table th.col-total { background: #1e40af; min-width: 130px; }
+  .gastos-table th.col-delete { background: #1e3a8a; min-width: 50px; width: 50px; }
+  .gastos-table th.month-col,
+  .gastos-table td.month-col { min-width: 115px; }
+
+  /* Columnas fijas: Concepto a la izq, Total + acción a la der.
+     Cada celda sticky necesita su propio background (no hereda del tr). */
+  .gastos-table th.col-concepto,
+  .gastos-table td.col-concepto {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: white;
+  }
+  .gastos-table thead th.col-concepto { background: #1e3a8a; z-index: 3; }
+  .gastos-table tbody tr:hover td.col-concepto { background: #f9fafb; }
+  .gastos-table tfoot td.col-concepto { background: #eff6ff; }
+
+  .gastos-table th.col-total,
+  .gastos-table td.col-total {
+    position: sticky;
+    right: 50px;
+    z-index: 2;
+    background: white;
+  }
+  .gastos-table thead th.col-total { background: #1e40af; z-index: 3; }
+  .gastos-table tbody tr:hover td.col-total { background: #f3f4f6; }
+  .gastos-table tfoot td.col-total { background: #dbeafe; }
+
+  .gastos-table th.col-delete,
+  .gastos-table td.col-delete {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: white;
+    min-width: 50px;
+    width: 50px;
+    text-align: center;
+  }
+  .gastos-table thead th.col-delete { background: #1e3a8a; z-index: 3; }
+  .gastos-table tbody tr:hover td.col-delete { background: #f9fafb; }
+  .gastos-table tfoot td.col-delete { background: #eff6ff; }
+
+  /* Pequeño "borde" visual entre columnas sticky y el contenido scrolleable */
+  .gastos-table td.col-concepto,
+  .gastos-table th.col-concepto { box-shadow: 1px 0 0 #e5e7eb; }
+  .gastos-table td.col-total,
+  .gastos-table th.col-total { box-shadow: -1px 0 0 #e5e7eb; }
+
+  /* Tooltip cuando el concepto tiene código */
+  .concepto-cell { position: relative; }
+  .concepto-cell .codigo-badge {
+    display: none;
+    position: absolute;
+    bottom: -22px;
+    left: 6px;
+    background: #1f2937;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.78em;
+    white-space: nowrap;
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .concepto-cell:hover .codigo-badge { display: block; }
   .gastos-table td {
     padding: 4px;
     border-bottom: 1px solid #f3f4f6;
@@ -435,6 +500,65 @@
   .stat-label { color: #6b7280; font-size: 0.82em; margin-bottom: 6px; font-weight: 500; }
   .stat-value { color: #1e3a8a; font-size: 1.4em; font-weight: 700; line-height: 1.1; }
   .stat-sub { color: #6b7280; font-size: 0.78em; margin-top: 4px; font-style: italic; }
+
+  /* Contenedores ECharts */
+  .echarts-container { width: 100%; }
+  .echarts-pie { height: 340px; }
+  @media (max-width: 520px) {
+    .echarts-pie { height: 460px; }
+  }
+
+  /* Gráfico de torta + leyenda al costado */
+  .pie-wrapper {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #pie-chart { flex-shrink: 0; }
+  .pie-legend-list {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88em;
+    padding: 4px 0;
+  }
+  .pie-legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .pie-legend-label {
+    flex: 1;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pie-legend-value {
+    color: #1e3a8a;
+    font-weight: 600;
+    text-align: right;
+  }
+  .pie-legend-pct {
+    color: #6b7280;
+    font-size: 0.85em;
+    margin-left: 4px;
+  }
+  @media (max-width: 700px) {
+    .pie-wrapper { gap: 14px; justify-content: center; }
+    #pie-chart { width: 220px; height: 220px; }
+    .pie-legend-list { min-width: 100%; }
+    .pie-legend-item { font-size: 0.82em; }
+  }
 
   .bar-chart {
     display: flex;
@@ -697,6 +821,188 @@
     margin-top: 14px;
   }
   .btn-primary:hover { background: #1e40af; }
+
+  /* Carrusel mes/año — sin marco. Flechas y texto al mismo nivel visual. */
+  .calc-mes-carrusel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    padding: 6px 0;
+  }
+  .carrusel-btn {
+    background: transparent;
+    border: none;
+    color: #475569;
+    font-size: 0.92em;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color 0.15s, transform 0.1s;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: 4px;
+  }
+  .carrusel-btn:hover { color: #1e3a8a; background: #f1f5f9; }
+  .carrusel-btn:active { transform: scale(0.9); }
+  .carrusel-mes-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.92em;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    min-width: 0;
+  }
+  /* Cada pieza (mes / año) es un botón que abre el popover */
+  .carrusel-pick {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+  }
+  .carrusel-pick:hover {
+    background: #f1f5f9;
+    color: #1e3a8a;
+  }
+  /* Anchor del popover */
+  .calc-mes-carrusel { position: relative; }
+
+  /* Popover tipo Windows */
+  .month-picker-popover {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 6px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+    padding: 10px;
+    z-index: 50;
+    width: 260px;
+    user-select: none;
+  }
+  .mp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 2px 2px 8px 2px;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 6px;
+  }
+  .mp-title {
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #1e3a8a;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    flex: 1;
+    text-align: center;
+  }
+  .mp-title:hover { background: #f1f5f9; }
+  .mp-nav {
+    background: transparent;
+    border: none;
+    color: #475569;
+    font-size: 1.1em;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .mp-nav:hover { background: #f1f5f9; color: #1e3a8a; }
+  .mp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .mp-cell {
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #374151;
+    padding: 12px 2px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: background 0.15s, color 0.15s;
+    text-align: center;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .mp-cell:hover { background: #eff6ff; color: #1e3a8a; }
+  .mp-cell.selected {
+    background: #1e3a8a;
+    color: white;
+  }
+  .mp-cell.selected:hover { background: #1e40af; }
+  .mp-cell.today {
+    box-shadow: inset 0 0 0 1.5px #3b82f6;
+  }
+  .mp-cell.today.selected { box-shadow: none; }
+  .mp-footer {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: center;
+  }
+  .mp-today-btn {
+    background: transparent;
+    border: none;
+    color: #1e3a8a;
+    font-family: inherit;
+    font-size: 0.88em;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .mp-today-btn:hover { background: #eff6ff; }
+  @media (max-width: 700px) {
+    .month-picker-popover { width: calc(100vw - 60px); max-width: 320px; }
+  }
+  @media (max-width: 700px) {
+    .calc-mes-carrusel { gap: 2px; }
+    .carrusel-btn { font-size: 0.85em; padding: 4px 5px; }
+    .carrusel-mes-label { font-size: 0.85em; gap: 4px; }
+  }
 
   .load-from-gastos {
     display: flex;
@@ -1202,9 +1508,15 @@
       display: table-cell;
       min-width: 110px;
     }
-    .gastos-table th.col-codigo,
-    .gastos-table td.col-codigo {
-      display: none;  /* ocultar código en mobile (queda en backend) */
+    /* En mobile el sticky queda raro con tan poco ancho — desactivamos */
+    .gastos-table th.col-concepto,
+    .gastos-table td.col-concepto,
+    .gastos-table th.col-total,
+    .gastos-table td.col-total,
+    .gastos-table th.col-delete,
+    .gastos-table td.col-delete {
+      position: static;
+      box-shadow: none;
     }
     .gastos-table th { font-size: 0.78em; padding: 6px 4px; }
     .gastos-table td { padding: 3px 2px; }
@@ -1407,7 +1719,6 @@
             <thead>
               <tr>
                 <th class="col-concepto">Concepto</th>
-                <th class="col-codigo">Código</th>
                 <th class="month-col" data-month-idx="0">Ene</th>
                 <th class="month-col" data-month-idx="1">Feb</th>
                 <th class="month-col" data-month-idx="2">Mar</th>
@@ -1421,7 +1732,7 @@
                 <th class="month-col" data-month-idx="10">Nov</th>
                 <th class="month-col" data-month-idx="11">Dic</th>
                 <th class="col-total">Total</th>
-                <th></th>
+                <th class="col-delete"></th>
               </tr>
             </thead>
             <tbody id="gastos-tbody"></tbody>
@@ -1469,28 +1780,63 @@
       </div>
 
       <div class="panel">
+        <h3>Composición del último mes (<span id="pie-month-label">—</span>)</h3>
+        <div id="pie-chart" class="echarts-container echarts-pie"></div>
+        <div id="pie-empty" class="info-box" style="display: none;">
+          Sin gastos cargados todavía para mostrar la composición.
+        </div>
+      </div>
+
+      <div class="panel">
         <h3>Evolución mensual</h3>
-        <div class="bar-chart" id="bar-chart"></div>
+        <div id="gastos-line-chart" class="echarts-container" style="width:100%;height:280px;"></div>
       </div>
     </section>
 
     <!-- Tab: Calculadora -->
     <section id="tab-calc" class="tab-content hidden">
-      <div class="load-from-gastos">
-        <label>Cargar gastos del Excel cloud:</label>
-        <select id="calc-year-select"></select>
-        <select id="calc-mes-select">
-          <option>Enero</option><option>Febrero</option><option>Marzo</option>
-          <option>Abril</option><option>Mayo</option><option>Junio</option>
-          <option>Julio</option><option>Agosto</option><option>Septiembre</option>
-          <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
-        </select>
-        <button id="cargar-mes-btn">Cargar este mes</button>
-      </div>
+      <!-- Combo legacy de mes — oculto. Lo mantenemos en el DOM para que el resto del código
+           (registrar-historico-btn, etc.) siga leyendo su .value mientras migramos al carrusel. -->
+      <select id="calc-mes-select" style="display:none;">
+        <option>Enero</option><option>Febrero</option><option>Marzo</option>
+        <option>Abril</option><option>Mayo</option><option>Junio</option>
+        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+      </select>
+      <button id="cargar-mes-btn" style="display:none;"></button>
 
       <div class="calc-grid">
         <div class="panel">
           <h3>Parámetros</h3>
+
+          <div class="calc-field">
+            <div class="calc-mes-carrusel">
+              <button class="carrusel-btn" id="carrusel-prev" type="button" aria-label="Mes anterior">‹</button>
+              <div class="carrusel-mes-label">
+                <button class="carrusel-pick" id="carrusel-mes-trigger" type="button" aria-label="Elegir mes">
+                  <span id="carrusel-mes-text">—</span>
+                </button>
+                <button class="carrusel-pick" id="carrusel-year-trigger" type="button" aria-label="Elegir año">
+                  <span id="carrusel-year-text">—</span>
+                </button>
+              </div>
+              <button class="carrusel-btn" id="carrusel-next" type="button" aria-label="Mes siguiente">›</button>
+              <!-- Popover tipo Windows: grid 4x3 de meses o años. Anclado al carrusel. -->
+              <div class="month-picker-popover hidden" id="month-picker" role="dialog" aria-modal="false">
+                <div class="mp-header">
+                  <button class="mp-nav" id="mp-prev" type="button" aria-label="Anterior">‹</button>
+                  <button class="mp-title" id="mp-title" type="button">—</button>
+                  <button class="mp-nav" id="mp-next" type="button" aria-label="Siguiente">›</button>
+                </div>
+                <div class="mp-grid" id="mp-grid"></div>
+                <div class="mp-footer">
+                  <button class="mp-today-btn" id="mp-today" type="button">Hoy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Combo legacy del año: oculto pero el código (renderCalcYearSelect/setCalcMonth) lo sigue actualizando -->
+          <select id="calc-year-select" style="display:none;"></select>
 
           <div class="calc-field">
             <label for="ingreso">Ingreso mensual (ARS)</label>
@@ -1627,14 +1973,13 @@
       </div>
 
       <div class="line-chart-wrapper">
+        <h3 style="color:#1e3a8a; margin-bottom:10px;">Evolución del sueldo</h3>
+        <div id="sueldo-chart" class="echarts-container" style="width:100%;height:320px;"></div>
+      </div>
+
+      <div class="line-chart-wrapper">
         <h3 style="color:#1e3a8a; margin-bottom:10px;">Evolución del ahorro acumulado (USD)</h3>
-        <svg class="line-chart" id="line-chart" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
-        <div class="chart-legend">
-          <div class="legend-item"><span class="legend-color" style="background:#f59e0b;"></span>Colchón</div>
-          <div class="legend-item"><span class="legend-color" style="background:#10b981;"></span>Casa</div>
-          <div class="legend-item"><span class="legend-color" style="background:#8b5cf6;"></span>Jubilación</div>
-          <div class="legend-item"><span class="legend-color" style="background:#1e3a8a;"></span>Total</div>
-        </div>
+        <div id="line-chart" class="echarts-container" style="width:100%;height:320px;"></div>
       </div>
 
       <div class="panel">
@@ -1939,6 +2284,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <script>
 'use strict';
 
@@ -1959,17 +2305,56 @@ const TARGET_PCT = 0.20;
 /* =====================================================
    HELPERS
    ===================================================== */
-const formatARS = v => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v || 0);
-const formatUSD = v => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v || 0);
+// Hasta 2 decimales — no redondear si el monto tiene fracción.
+const formatARS = v => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(v || 0);
+// USD se muestra como "U$D 1.234,56" (estilo AR para los miles)
+const formatUSD = v => {
+  const n = v || 0;
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  const formatted = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(abs);
+  return `${sign}U$D ${formatted}`;
+};
 const formatNumberAR = v => {
   if (v === null || v === undefined || isNaN(v)) return '';
   return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(v);
 };
+// Parser tolerante: acepta "1.500,50", "1,500.50", "1500.5", "1500,5", "1.500" (=1500), "1.5" (=1.5).
+// Reglas:
+//  - Si hay tanto . como , → el último separador es decimal, el otro es miles.
+//  - Si hay un solo separador con 1 ó 2 dígitos después → decimal.
+//  - Si hay un solo separador con 3 dígitos después → miles (típico es-AR).
+//  - Múltiples del mismo separador → todos miles.
 const parseARS = str => {
   if (typeof str === 'number') return str;
-  if (!str) return 0;
-  const cleaned = String(str).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
-  return parseFloat(cleaned) || 0;
+  if (str === null || str === undefined) return 0;
+  let s = String(str).trim();
+  if (!s) return 0;
+  const neg = s.startsWith('-');
+  s = s.replace(/[^\d.,]/g, '');
+  if (!s) return 0;
+  const lastDot = s.lastIndexOf('.');
+  const lastComma = s.lastIndexOf(',');
+  const dots = (s.match(/\./g) || []).length;
+  const commas = (s.match(/,/g) || []).length;
+  let decimalAt = -1;
+  if (dots > 0 && commas > 0) {
+    decimalAt = Math.max(lastDot, lastComma);
+  } else if (commas === 1) {
+    decimalAt = lastComma;
+  } else if (dots === 1) {
+    const after = s.length - lastDot - 1;
+    if (after !== 3) decimalAt = lastDot;
+  }
+  let result;
+  if (decimalAt !== -1) {
+    const intPart = s.slice(0, decimalAt).replace(/[.,]/g, '');
+    const decPart = s.slice(decimalAt + 1);
+    result = parseFloat((intPart || '0') + '.' + decPart);
+  } else {
+    result = parseFloat(s.replace(/[.,]/g, ''));
+  }
+  return (neg ? -1 : 1) * (result || 0);
 };
 const formatARSCompact = v => {
   if (!v) return '';
@@ -1978,9 +2363,11 @@ const formatARSCompact = v => {
   return formatARS(v);
 };
 const formatUSDCompact = v => {
-  if (!v) return '$0';
-  if (v >= 1000) return '$' + (v / 1000).toFixed(1) + 'K';
-  return '$' + Math.round(v);
+  const n = v || 0;
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1000) return `${sign}U$D ${(abs / 1000).toFixed(1)}K`;
+  return `${sign}U$D ${Math.round(abs)}`;
 };
 
 function showToast(msg, type = '') {
@@ -2022,7 +2409,10 @@ let currentUser = null;
 let currentYear = null;
 let gastosCache = [];      // gastos del año actual (cache local)
 let historicoCache = [];   // todos los registros del histórico
-let deducciones = [];      // gastos de la calculadora
+let deducciones = [];      // gastos de la calculadora — { desc, monto, gasto_id? }
+// Reserva uso diario: por defecto se propone el 50% del excedente.
+// Cuando el user toca el input, pasa a manual y respeta su valor hasta cambiar de mes.
+let reservaDiariaAuto = true;
 
 const saveTimers = {};     // por gasto id (debounce)
 
@@ -2285,8 +2675,17 @@ function showTab(tabName) {
   if (btn) btn.classList.add('active');
 
   if (tabName === 'historico') loadAndRenderHistorico();
-  if (tabName === 'calc') renderCalcYearSelect();
+  if (tabName === 'calc') {
+    renderCalcYearSelect().then(() => {
+      // Preservar año seleccionado del carrusel después de refrescar el combo
+      if (calcSelection.year !== null) {
+        document.getElementById('calc-year-select').value = calcSelection.year;
+      }
+    });
+  }
   if (tabName === 'inversiones') loadAndRenderIol();
+  // Después de pintar el tab, redimensionar los charts que pudieron haberse inicializado en oculto
+  requestAnimationFrame(resizeAllCharts);
 }
 
 document.querySelectorAll('.tab-btn').forEach(b => {
@@ -2359,6 +2758,8 @@ async function loadAndRenderGastos() {
   renderTotalsRow();
   renderStats();
   renderChart();
+  // Esperar al próximo frame para que offsetLeft/offsetWidth ya reflejen el layout
+  requestAnimationFrame(scrollToLastMonthWithData);
   setStatus('saved', 'Sincronizado');
 }
 
@@ -2370,34 +2771,46 @@ function renderGastosTable() {
     const tr = document.createElement('tr');
     tr.dataset.id = item.id;
 
-    // Concepto
+    // Concepto + badge con el código (visible al hover; doble-click para editar)
     const tdConcepto = document.createElement('td');
+    tdConcepto.className = 'col-concepto concepto-cell';
     const conceptoInput = document.createElement('input');
     conceptoInput.type = 'text';
     conceptoInput.className = 'cell-input cell-text';
     conceptoInput.value = item.concepto || '';
     conceptoInput.placeholder = 'Concepto';
+    const refreshTooltip = () => {
+      conceptoInput.title = item.codigo
+        ? `Código: ${item.codigo}\n(doble-click para editar)`
+        : 'Doble-click para asignar un código';
+    };
+    refreshTooltip();
     conceptoInput.addEventListener('input', e => {
       gastosCache[idx].concepto = e.target.value;
       scheduleGastoUpdate(item.id, { concepto: e.target.value });
     });
-    tdConcepto.appendChild(conceptoInput);
-    tr.appendChild(tdConcepto);
-
-    // Código
-    const tdCodigo = document.createElement('td');
-    tdCodigo.className = 'col-codigo';
-    const codigoInput = document.createElement('input');
-    codigoInput.type = 'text';
-    codigoInput.className = 'cell-input cell-text';
-    codigoInput.value = item.codigo || '';
-    codigoInput.placeholder = '—';
-    codigoInput.addEventListener('input', e => {
-      gastosCache[idx].codigo = e.target.value;
-      scheduleGastoUpdate(item.id, { codigo: e.target.value });
+    conceptoInput.addEventListener('dblclick', async () => {
+      const nuevo = prompt('Código del concepto (vacío para borrar):', item.codigo || '');
+      if (nuevo === null) return; // cancel
+      const trimmed = nuevo.trim();
+      gastosCache[idx].codigo = trimmed;
+      item.codigo = trimmed;
+      try {
+        await updateGasto(item.id, { codigo: trimmed });
+        refreshTooltip();
+        if (badge) badge.textContent = trimmed || '—';
+      } catch {}
     });
-    tdCodigo.appendChild(codigoInput);
-    tr.appendChild(tdCodigo);
+    tdConcepto.appendChild(conceptoInput);
+    // Badge flotante que aparece al pasar el mouse sobre la celda (tooltip propio)
+    let badge = null;
+    if (item.codigo) {
+      badge = document.createElement('span');
+      badge.className = 'codigo-badge';
+      badge.textContent = item.codigo;
+      tdConcepto.appendChild(badge);
+    }
+    tr.appendChild(tdConcepto);
 
     // Meses
     MESES_LOWER.forEach((mesKey, mIdx) => {
@@ -2430,13 +2843,13 @@ function renderGastosTable() {
 
     // Total
     const tdTotal = document.createElement('td');
-    tdTotal.className = 'row-total';
+    tdTotal.className = 'row-total col-total';
     tdTotal.textContent = formatARS(rowSum(item));
     tr.appendChild(tdTotal);
 
     // Eliminar
     const tdDel = document.createElement('td');
-    tdDel.style.textAlign = 'center';
+    tdDel.className = 'col-delete';
     const delBtn = document.createElement('button');
     delBtn.className = 'remove-row';
     delBtn.textContent = '×';
@@ -2474,18 +2887,12 @@ function renderTotalsRow() {
   const row = document.getElementById('gastos-totales-row');
   row.innerHTML = '';
 
-  // 2 celdas separadas (concepto + codigo) en vez de colspan, para que al ocultar
-  // codigo en mobile el resto de la fila se alinee correctamente con las filas de datos
   const tdLabel = document.createElement('td');
-  tdLabel.className = 'totals-label';
+  tdLabel.className = 'totals-label col-concepto';
   tdLabel.innerHTML =
     '<span class="totals-label-full">TOTAL POR MES</span>' +
     '<span class="totals-label-short">TOTAL</span>';
   row.appendChild(tdLabel);
-  // Celda vacía en posición del código — se oculta en mobile junto con la columna
-  const tdLabelCodigo = document.createElement('td');
-  tdLabelCodigo.className = 'col-codigo';
-  row.appendChild(tdLabelCodigo);
 
   let totalAnio = 0;
   MESES_LOWER.forEach((m, mIdx) => {
@@ -2494,18 +2901,46 @@ function renderTotalsRow() {
     const td = document.createElement('td');
     td.className = 'month-col';
     td.dataset.monthIdx = mIdx;
-    td.textContent = sum > 0 ? formatARSCompact(sum) : '—';
+    td.textContent = sum > 0 ? formatARS(sum) : '—';
     row.appendChild(td);
   });
 
   const tdAnio = document.createElement('td');
-  tdAnio.className = 'grand-total';
+  tdAnio.className = 'grand-total col-total';
   tdAnio.textContent = formatARS(totalAnio);
   row.appendChild(tdAnio);
-  row.appendChild(document.createElement('td'));
+  const tdDelSpacer = document.createElement('td');
+  tdDelSpacer.className = 'col-delete';
+  row.appendChild(tdDelSpacer);
 
   // Re-aplicar el filtro de mes activo (mobile) sobre celdas recién renderizadas
   applyActiveMonthFilter();
+}
+
+// Scrollea el wrapper de la tabla al último mes con datos.
+// Si no hay datos (año nuevo), va al inicio.
+// Se llama después de renderear los totales (cuando el DOM ya tiene los anchos definitivos).
+function scrollToLastMonthWithData() {
+  const wrapper = document.querySelector('.gastos-table-wrapper');
+  if (!wrapper) return;
+  const totalsMes = MESES_LOWER.map(m => colSum(m));
+  let lastIdx = -1;
+  for (let i = totalsMes.length - 1; i >= 0; i--) {
+    if (totalsMes[i] > 0) { lastIdx = i; break; }
+  }
+  if (lastIdx < 0) {
+    wrapper.scrollLeft = 0;
+    return;
+  }
+  const header = wrapper.querySelector(`thead th.month-col[data-month-idx="${lastIdx}"]`);
+  if (!header) { wrapper.scrollLeft = wrapper.scrollWidth; return; }
+  const totalTh = wrapper.querySelector('thead th.col-total');
+  const deleteTh = wrapper.querySelector('thead th.col-delete');
+  const stickyRightWidth = (totalTh?.offsetWidth || 130) + (deleteTh?.offsetWidth || 50);
+  // Queremos que el mes objetivo termine justo antes de la columna Total (sticky right)
+  const cellEnd = header.offsetLeft + header.offsetWidth;
+  const target = cellEnd - (wrapper.clientWidth - stickyRightWidth);
+  wrapper.scrollLeft = Math.max(0, target);
 }
 
 // Mobile: muestra solo la columna del mes seleccionado en .gastos-table
@@ -2541,34 +2976,208 @@ function renderStats() {
   document.getElementById('stat-total-anio').textContent = formatARS(totalAnio);
 }
 
+// Paleta común para torta y leyenda
+const PIE_PALETTE = [
+  '#1e3a8a', '#10b981', '#f59e0b', '#8b5cf6', '#dc2626',
+  '#0ea5e9', '#84cc16', '#ec4899', '#14b8a6', '#f97316',
+  '#6366f1', '#facc15', '#22c55e', '#a855f7', '#06b6d4',
+  '#ef4444', '#3b82f6', '#eab308'
+];
+
+/* ============== ECharts: helpers comunes ============== */
+const chartInstances = {};
+function getChart(id) {
+  if (!chartInstances[id]) {
+    const el = document.getElementById(id);
+    if (!el || typeof echarts === 'undefined') return null;
+    chartInstances[id] = echarts.init(el, null, { renderer: 'canvas' });
+  }
+  return chartInstances[id];
+}
+function disposeChart(id) {
+  if (chartInstances[id]) {
+    chartInstances[id].dispose();
+    delete chartInstances[id];
+  }
+}
+// Tooltip común estilo light theme
+const CHART_TOOLTIP = {
+  backgroundColor: 'white',
+  borderColor: '#e5e7eb',
+  borderWidth: 1,
+  padding: [8, 12],
+  textStyle: { color: '#1e3a8a', fontFamily: 'inherit', fontSize: 12 },
+  extraCssText: 'box-shadow: 0 6px 18px rgba(0,0,0,0.08); border-radius: 8px;'
+};
+
 function renderChart() {
-  const chart = document.getElementById('bar-chart');
-  chart.innerHTML = '';
+  renderPieLastMonth();
+  renderGastosLineChart();
+}
+
+// Doughnut (rosco) de composición del último mes con total al centro
+function renderPieLastMonth() {
+  const chartEl = document.getElementById('pie-chart');
+  const emptyEl = document.getElementById('pie-empty');
+  const monthLabel = document.getElementById('pie-month-label');
+  if (!chartEl) return;
+
   const totalsMes = MESES_LOWER.map(m => colSum(m));
-  const maxVal = Math.max(...totalsMes, 1);
+  let lastIdx = -1;
+  for (let i = totalsMes.length - 1; i >= 0; i--) {
+    if (totalsMes[i] > 0) { lastIdx = i; break; }
+  }
 
-  totalsMes.forEach((value, idx) => {
-    const pct = maxVal > 0 ? (value / maxVal) * 100 : 0;
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-    bar.title = `${MESES[idx]}: ${formatARS(value)}`;
+  if (lastIdx < 0) {
+    chartEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    monthLabel.textContent = '—';
+    disposeChart('pie-chart');
+    return;
+  }
+  emptyEl.style.display = 'none';
+  chartEl.style.display = '';
+  monthLabel.textContent = `${MESES[lastIdx]} ${currentYear}`;
 
-    if (value > 0) {
-      const vl = document.createElement('div');
-      vl.className = 'bar-value';
-      vl.textContent = formatARSCompact(value);
-      bar.appendChild(vl);
-    }
-    const fill = document.createElement('div');
-    fill.className = 'bar-fill';
-    fill.style.height = pct + '%';
-    bar.appendChild(fill);
-    const label = document.createElement('div');
-    label.className = 'bar-label';
-    label.textContent = MESES_CORTOS[idx];
-    bar.appendChild(label);
-    chart.appendChild(bar);
-  });
+  const mesKey = MESES_LOWER[lastIdx];
+  const items = gastosCache
+    .filter(g => (parseFloat(g[mesKey]) || 0) > 0)
+    .map(g => ({ name: g.concepto || '(sin nombre)', value: parseFloat(g[mesKey]) || 0 }))
+    .sort((a, b) => b.value - a.value);
+  const total = items.reduce((s, i) => s + i.value, 0);
+
+  const chart = getChart('pie-chart');
+  if (!chart) return;
+
+  // Layout responsive: en mobile (ancho < 520) leyenda abajo, doughnut centrado.
+  const containerW = chartEl.clientWidth || 360;
+  const isMobile = containerW < 520;
+
+  const legendCfg = isMobile ? {
+    orient: 'horizontal',
+    bottom: 8,
+    left: 'center',
+    type: 'scroll',
+    pageIconColor: '#1e3a8a',
+    pageIconInactiveColor: '#cbd5e1',
+    pageTextStyle: { color: '#6b7280', fontSize: 11 },
+    itemWidth: 11, itemHeight: 11,
+    itemGap: 10,
+    textStyle: { color: '#374151', fontSize: 11, fontFamily: 'inherit' },
+    formatter: name => name.length > 14 ? name.slice(0, 14) + '…' : name
+  } : {
+    orient: 'vertical',
+    right: 8,
+    top: 'middle',
+    itemWidth: 12, itemHeight: 12,
+    itemGap: 8,
+    textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' },
+    formatter: name => name.length > 24 ? name.slice(0, 24) + '…' : name
+  };
+
+  const seriesCenter = isMobile ? ['50%', '40%'] : ['33%', '50%'];
+  const totalLabelLeft = isMobile ? '50%' : '33%';
+  const totalLabelTop = isMobile ? '40%' : '50%';
+
+  chart.setOption({
+    color: PIE_PALETTE,
+    tooltip: {
+      ...CHART_TOOLTIP,
+      trigger: 'item',
+      confine: true,
+      formatter: p => `<strong>${p.name}</strong><br/>${formatARS(p.value)} <span style="color:#6b7280;">(${p.percent.toFixed(1)}%)</span>`
+    },
+    legend: legendCfg,
+    graphic: [{
+      type: 'group',
+      left: totalLabelLeft,
+      top: totalLabelTop,
+      children: [
+        { type: 'text', top: -16, left: 'center', style: { text: 'Total', fontSize: 11, fill: '#6b7280', fontFamily: 'inherit' } },
+        { type: 'text', top: 2, left: 'center', style: { text: formatARS(total), fontSize: 17, fontWeight: 700, fill: '#1e3a8a', fontFamily: 'inherit' } }
+      ]
+    }],
+    series: [{
+      type: 'pie',
+      radius: isMobile ? ['45%', '70%'] : ['52%', '78%'],
+      center: seriesCenter,
+      avoidLabelOverlap: true,
+      padAngle: 2,
+      itemStyle: {
+        borderRadius: 6,
+        borderColor: 'white',
+        borderWidth: 2
+      },
+      label: { show: false },
+      labelLine: { show: false },
+      emphasis: {
+        scale: true,
+        scaleSize: 6,
+        itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.18)' }
+      },
+      data: items
+    }]
+  }, true);
+}
+
+// Evolución mensual del año actual — bar chart con gradient
+function renderGastosLineChart() {
+  const chart = getChart('gastos-line-chart');
+  if (!chart) return;
+  const totalsMes = MESES_LOWER.map(m => colSum(m));
+  chart.setOption({
+    grid: { left: 60, right: 24, top: 24, bottom: 36 },
+    tooltip: {
+      ...CHART_TOOLTIP,
+      trigger: 'axis',
+      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(30,58,138,0.06)' } },
+      formatter: params => {
+        const p = params[0];
+        return `<strong>${MESES[p.dataIndex]} ${currentYear}</strong><br/>${formatARS(p.value)}`;
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: MESES_CORTOS,
+      axisLine: { lineStyle: { color: '#cbd5e1' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11, fontFamily: 'inherit', formatter: v => formatARSCompact(v) },
+      splitLine: { lineStyle: { color: '#f1f5f9' } }
+    },
+    series: [{
+      type: 'bar',
+      data: totalsMes.map(v => v > 0 ? v : null),
+      barWidth: '58%',
+      itemStyle: {
+        color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
+          { offset: 0, color: '#60a5fa' }, { offset: 1, color: '#1e3a8a' }
+        ]},
+        borderRadius: [6, 6, 0, 0]
+      },
+      emphasis: {
+        itemStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
+            { offset: 0, color: '#3b82f6' }, { offset: 1, color: '#1e40af' }
+          ]}
+        }
+      },
+      label: {
+        show: true,
+        position: 'top',
+        color: '#1e3a8a',
+        fontSize: 10,
+        fontWeight: 600,
+        fontFamily: 'inherit',
+        formatter: p => p.value ? formatARSCompact(p.value) : ''
+      }
+    }]
+  }, true);
 }
 
 document.getElementById('add-concepto-btn').addEventListener('click', async () => {
@@ -2778,7 +3387,10 @@ function renderDeducciones() {
     desc.type = 'text';
     desc.value = d.desc;
     desc.placeholder = 'Descripción';
-    desc.addEventListener('input', e => { deducciones[i].desc = e.target.value; });
+    desc.addEventListener('input', e => {
+      deducciones[i].desc = e.target.value;
+      scheduleDeduccionWriteBack(i);
+    });
 
     const monto = document.createElement('input');
     monto.type = 'text';
@@ -2788,6 +3400,7 @@ function renderDeducciones() {
     monto.addEventListener('input', e => {
       deducciones[i].monto = parseARS(e.target.value);
       calcular();
+      scheduleDeduccionWriteBack(i);
     });
     monto.addEventListener('blur', e => {
       e.target.value = deducciones[i].monto > 0 ? formatNumberAR(deducciones[i].monto) : '';
@@ -2796,10 +3409,15 @@ function renderDeducciones() {
     const del = document.createElement('button');
     del.className = 'remove-row';
     del.textContent = '×';
-    del.addEventListener('click', () => {
+    del.addEventListener('click', async () => {
+      const removed = deducciones[i];
       deducciones.splice(i, 1);
       renderDeducciones();
       calcular();
+      // Borrar también el monto del mes en la planilla si existía
+      if (removed?.gasto_id) {
+        await deleteDeduccionDePlanilla(removed.gasto_id);
+      }
     });
 
     row.appendChild(desc);
@@ -2870,13 +3488,19 @@ function calcular() {
   const mep = parseARS(document.getElementById('mep').value) || 1;
   const fase = document.querySelector('input[name="fase"]:checked').value;
 
-  // Reserva uso diario: monto fijo en ARS (cap a excedente si es mayor)
-  let reservaDiariaInput = parseARS(document.getElementById('reserva-diaria').value);
-  if (isNaN(reservaDiariaInput) || reservaDiariaInput < 0) reservaDiariaInput = 0;
-
   document.getElementById('gastos-total').textContent = formatARS(gastos);
 
   const excedente = ingreso - gastos;
+
+  // Reserva uso diario: si está en modo auto, proponer el 50% del excedente (mín 0).
+  // Una vez que el user toca el input, queda en manual y conserva su valor.
+  const reservaInput = document.getElementById('reserva-diaria');
+  if (reservaDiariaAuto) {
+    const autoMonto = Math.max(0, excedente * 0.5);
+    reservaInput.value = autoMonto > 0 ? formatNumberAR(autoMonto) : '';
+  }
+  let reservaDiariaInput = parseARS(reservaInput.value);
+  if (isNaN(reservaDiariaInput) || reservaDiariaInput < 0) reservaDiariaInput = 0;
   const target = ingreso * TARGET_PCT;
   const diff = excedente - target;
 
@@ -2948,8 +3572,7 @@ function calcular() {
   window._configSaveTimer = setTimeout(() => {
     upsertUserConfig({
       default_ingreso: ingreso,
-      default_mep: mep,
-      reserva_diaria_ars: reservaDiariaInput
+      default_mep: mep
     });
   }, 1500);
 }
@@ -2960,41 +3583,327 @@ document.getElementById('add-deduccion-btn').addEventListener('click', () => {
   calcular();
 });
 
+// ============== Carrusel mes/año ==============
+// Estado: { year, monthIdx }. Una vez seteado, getCalcSelection() lo devuelve.
+let calcSelection = { year: null, monthIdx: null };
+let loadingCalcMonth = false;  // evita re-entradas durante el carrusel
+
+function getCalcSelection() {
+  if (calcSelection.year !== null && calcSelection.monthIdx !== null) {
+    return { year: calcSelection.year, mes: MESES[calcSelection.monthIdx] };
+  }
+  const year = parseInt(document.getElementById('calc-year-select').value) || new Date().getFullYear();
+  const mes = document.getElementById('calc-mes-select').value || MESES[new Date().getMonth()];
+  return { year, mes };
+}
+
+function updateCarruselLabel() {
+  const mesText = document.getElementById('carrusel-mes-text');
+  const yearText = document.getElementById('carrusel-year-text');
+  if (!mesText || !yearText) return;
+  if (calcSelection.year === null) {
+    mesText.textContent = '—';
+    yearText.textContent = '—';
+    return;
+  }
+  mesText.textContent = MESES[calcSelection.monthIdx];
+  yearText.textContent = calcSelection.year;
+}
+
+/* ============== Popover tipo Windows ==============
+   Modo 'month': grid 4x3 con los meses del año en pickerYear.
+   Modo 'year' : grid 4x3 con un rango de 12 años centrado en pickerYear.
+   Header: flechas ‹ › cambian de año (modo mes) o de bloque de 12 años (modo año).
+           Click en el título cambia entre modos.
+*/
+let pickerMode = 'month';
+let pickerYear = null;
+
+function openPicker(mode) {
+  // Si el popover ya estaba abierto, conservamos pickerYear (puede haber sido modificado
+  // por el grid de años o por las flechas del header sin confirmar todavía).
+  const reopen = !isPickerOpen();
+  pickerMode = mode || 'month';
+  if (reopen) {
+    pickerYear = calcSelection.year ?? new Date().getFullYear();
+    document.getElementById('month-picker').classList.remove('hidden');
+  }
+  renderPickerGrid();
+}
+
+function closePicker() {
+  document.getElementById('month-picker').classList.add('hidden');
+}
+
+function isPickerOpen() {
+  return !document.getElementById('month-picker').classList.contains('hidden');
+}
+
+function renderPickerGrid() {
+  const grid = document.getElementById('mp-grid');
+  const title = document.getElementById('mp-title');
+  grid.innerHTML = '';
+  const now = new Date();
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth();
+
+  if (pickerMode === 'month') {
+    title.textContent = pickerYear;
+    MESES_CORTOS.forEach((corto, idx) => {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'mp-cell';
+      cell.textContent = corto;
+      cell.title = MESES[idx];
+      if (calcSelection.year === pickerYear && calcSelection.monthIdx === idx) cell.classList.add('selected');
+      if (todayYear === pickerYear && todayMonth === idx) cell.classList.add('today');
+      cell.addEventListener('click', () => {
+        setCalcMonth(pickerYear, idx);
+        closePicker();
+      });
+      grid.appendChild(cell);
+    });
+  } else {
+    // Modo año: 12 años centrados en pickerYear (4 antes, año actual, 7 después).
+    // Click en un año aplica directo (conserva el mes actual) y cierra el popover.
+    const base = pickerYear - 4;
+    title.textContent = `${base} – ${base + 11}`;
+    for (let i = 0; i < 12; i++) {
+      const y = base + i;
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'mp-cell';
+      cell.textContent = y;
+      if (calcSelection.year === y) cell.classList.add('selected');
+      if (todayYear === y) cell.classList.add('today');
+      cell.addEventListener('click', () => {
+        const monthIdx = calcSelection.monthIdx ?? new Date().getMonth();
+        setCalcMonth(y, monthIdx);
+        closePicker();
+      });
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// Carga año actual + año adyacentes al combo
 async function renderCalcYearSelect() {
   const sel = document.getElementById('calc-year-select');
   sel.innerHTML = '';
   const years = await fetchYears();
   const thisYear = new Date().getFullYear();
   if (years.length === 0) years.push(thisYear);
-
+  // Permitir también el año siguiente para planificar
+  if (!years.includes(thisYear + 1)) years.push(thisYear + 1);
   years.forEach(y => {
     const opt = document.createElement('option');
     opt.value = y; opt.textContent = y;
     sel.appendChild(opt);
   });
-  if (years.includes(thisYear)) sel.value = thisYear;
 }
 
-document.getElementById('cargar-mes-btn').addEventListener('click', async () => {
-  const year = parseInt(document.getElementById('calc-year-select').value);
-  const mes = document.getElementById('calc-mes-select').value;
-  if (!year) return;
+// Fetch del registro de histórico para un mes/año específico (sin tocar cache global)
+async function fetchHistoricoMes(year, mesNombre) {
+  if (!currentUser) return null;
+  const { data } = await sb.from('historico_ahorro')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .eq('year', year)
+    .eq('mes', mesNombre)
+    .maybeSingle();
+  return data;
+}
 
-  const gastos = await fetchGastos(year);
-  const mesKey = mes.toLowerCase();
-  const conceptos = gastos
-    .filter(g => (parseFloat(g[mesKey]) || 0) > 0)
-    .map(g => ({ desc: g.concepto, monto: parseFloat(g[mesKey]) || 0 }));
-
-  if (conceptos.length === 0) {
-    showToast(`No hay gastos cargados en ${mes} ${year}.`, 'error');
-    return;
+// Setea el carrusel a un mes/año específico y dispara la carga
+async function setCalcMonth(year, monthIdx) {
+  calcSelection = { year, monthIdx };
+  updateCarruselLabel();
+  // Sync combos legacy (registrar-historico-btn los leía)
+  document.getElementById('calc-mes-select').value = MESES[monthIdx];
+  const yearSel = document.getElementById('calc-year-select');
+  // Si el año no está en el combo, lo agregamos al vuelo (permite navegar a años sin datos aún)
+  if (!yearSel.querySelector(`option[value="${year}"]`)) {
+    const opt = document.createElement('option');
+    opt.value = year; opt.textContent = year;
+    yearSel.appendChild(opt);
   }
-  deducciones = conceptos;
-  renderDeducciones();
-  calcular();
-  showToast(`Cargados ${conceptos.length} conceptos de ${mes} ${year}`, 'success');
+  yearSel.value = year;
+
+  await loadCalcMonth(year, MESES[monthIdx]);
+}
+
+// Carga datos del mes: gastos desde la planilla + datos del histórico si existen.
+// Resetea reservaDiariaAuto = true salvo que el histórico tenga diario_ars guardado.
+async function loadCalcMonth(year, mesNombre) {
+  if (loadingCalcMonth) return;
+  loadingCalcMonth = true;
+  try {
+    reservaDiariaAuto = true;
+    const mesKey = mesNombre.toLowerCase();
+
+    // 1. Cargar gastos del planilla del año (autoload) — solo conceptos con monto > 0 en este mes
+    const gastosDelAnio = await fetchGastos(year);
+    deducciones = gastosDelAnio
+      .filter(g => (parseFloat(g[mesKey]) || 0) > 0)
+      .map(g => ({
+        desc: g.concepto || '',
+        monto: parseFloat(g[mesKey]) || 0,
+        gasto_id: g.id
+      }));
+
+    // 2. Buscar registro del histórico para precargar ingreso/mep/fase/diario
+    const hist = await fetchHistoricoMes(year, mesNombre);
+    if (hist) {
+      if (hist.ingreso_ars > 0) {
+        document.getElementById('ingreso').value = formatNumberAR(hist.ingreso_ars);
+      }
+      if (hist.mep > 0) {
+        document.getElementById('mep').value = formatNumberAR(hist.mep);
+      }
+      const faseInput = document.querySelector(`input[name="fase"][value="${hist.fase}"]`);
+      if (faseInput) { faseInput.checked = true; actualizarRadios(); }
+      if (hist.diario_ars > 0) {
+        document.getElementById('reserva-diaria').value = formatNumberAR(hist.diario_ars);
+        reservaDiariaAuto = false; // el user lo había fijado manual al registrar
+      }
+    }
+
+    renderDeducciones();
+    calcular();
+  } finally {
+    loadingCalcMonth = false;
+  }
+}
+
+// Navegación: prev/next mes (cruza años)
+function moverMes(delta) {
+  let { year, monthIdx } = calcSelection;
+  if (year === null) {
+    year = new Date().getFullYear();
+    monthIdx = new Date().getMonth();
+  }
+  monthIdx += delta;
+  while (monthIdx < 0) { monthIdx += 12; year--; }
+  while (monthIdx > 11) { monthIdx -= 12; year++; }
+  setCalcMonth(year, monthIdx);
+}
+
+document.getElementById('carrusel-prev').addEventListener('click', () => moverMes(-1));
+document.getElementById('carrusel-next').addEventListener('click', () => moverMes(1));
+
+// Abrir popover desde MES o AÑO. Si ya está abierto en el mismo modo, lo cierra.
+document.getElementById('carrusel-mes-trigger').addEventListener('click', e => {
+  e.stopPropagation();
+  if (isPickerOpen() && pickerMode === 'month') { closePicker(); return; }
+  openPicker('month');
 });
+document.getElementById('carrusel-year-trigger').addEventListener('click', e => {
+  e.stopPropagation();
+  if (isPickerOpen() && pickerMode === 'year') { closePicker(); return; }
+  openPicker('year');
+});
+
+// Flechas del header del popover: cambian año (modo mes) o bloque de 12 años (modo año)
+document.getElementById('mp-prev').addEventListener('click', e => {
+  e.stopPropagation();
+  pickerYear += (pickerMode === 'year' ? -12 : -1);
+  renderPickerGrid();
+});
+document.getElementById('mp-next').addEventListener('click', e => {
+  e.stopPropagation();
+  pickerYear += (pickerMode === 'year' ? 12 : 1);
+  renderPickerGrid();
+});
+// Título del popover: alterna entre vista mes ↔ año
+document.getElementById('mp-title').addEventListener('click', e => {
+  e.stopPropagation();
+  pickerMode = (pickerMode === 'month') ? 'year' : 'month';
+  renderPickerGrid();
+});
+// Botón "Hoy": setea calcSelection al mes/año actual y cierra
+document.getElementById('mp-today').addEventListener('click', e => {
+  e.stopPropagation();
+  const now = new Date();
+  setCalcMonth(now.getFullYear(), now.getMonth());
+  closePicker();
+});
+
+// Click fuera del popover → cerrar
+document.addEventListener('click', e => {
+  if (!isPickerOpen()) return;
+  const popover = document.getElementById('month-picker');
+  const mesTrigger = document.getElementById('carrusel-mes-trigger');
+  const yearTrigger = document.getElementById('carrusel-year-trigger');
+  if (popover.contains(e.target) || mesTrigger.contains(e.target) || yearTrigger.contains(e.target)) return;
+  closePicker();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && isPickerOpen()) closePicker();
+});
+
+// ============== Write-back a la planilla de gastos ==============
+// Cuando el user modifica una deducción, escribimos al planilla `gastos`:
+//  - Si tiene gasto_id → UPDATE
+//  - Si no, pero hay desc + monto > 0 → INSERT
+// Debounce por índice para no machacar al backend.
+const deduccionWriteTimers = {};
+function scheduleDeduccionWriteBack(idx) {
+  const key = String(idx);
+  if (deduccionWriteTimers[key]) clearTimeout(deduccionWriteTimers[key]);
+  deduccionWriteTimers[key] = setTimeout(() => {
+    writeBackDeduccion(idx).catch(err => console.error('writeBack falló:', err));
+    delete deduccionWriteTimers[key];
+  }, 800);
+}
+
+async function writeBackDeduccion(idx) {
+  const d = deducciones[idx];
+  if (!d) return;
+  const { year, mes } = getCalcSelection();
+  const mesKey = mes.toLowerCase();
+
+  if (d.gasto_id) {
+    // Update gasto existente: actualiza concepto y monto del mes
+    await updateGasto(d.gasto_id, {
+      concepto: d.desc,
+      [mesKey]: d.monto
+    });
+  } else if (d.desc && d.desc.trim() && d.monto > 0) {
+    // Insert nuevo en la planilla del año
+    if (!currentUser) return;
+    const { data, error } = await sb
+      .from('gastos')
+      .insert({
+        user_id: currentUser.id,
+        year,
+        concepto: d.desc,
+        [mesKey]: d.monto,
+        orden: 999  // al final
+      })
+      .select()
+      .single();
+    if (error) { console.error(error); return; }
+    d.gasto_id = data.id;
+  }
+
+  // Si la pantalla de gastos está mostrando este mismo año, refrescamos cache
+  // para que el cambio se vea reflejado al volver a la pestaña.
+  if (currentYear === year) {
+    gastosCache = await fetchGastos(year);
+  }
+}
+
+async function deleteDeduccionDePlanilla(gastoId) {
+  if (!gastoId) return;
+  const { year, mes } = getCalcSelection();
+  const mesKey = mes.toLowerCase();
+  // Comportamiento: borramos SOLO el monto de este mes en la fila del planilla
+  // (no la fila entera — puede tener montos en otros meses).
+  await updateGasto(gastoId, { [mesKey]: 0 });
+  if (currentYear === year) {
+    gastosCache = await fetchGastos(year);
+  }
+}
 
 document.getElementById('registrar-historico-btn').addEventListener('click', async () => {
   const ingreso = parseARS(document.getElementById('ingreso').value);
@@ -3007,16 +3916,21 @@ document.getElementById('registrar-historico-btn').addEventListener('click', asy
     if (!confirm('El excedente es 0 o negativo. ¿Registrar igual?')) return;
   }
 
-  const year = parseInt(document.getElementById('calc-year-select').value) || new Date().getFullYear();
-  const mes = document.getElementById('calc-mes-select').value;
+  const { year, mes } = getCalcSelection();
+
+  // Reserva uso diario (igual lógica que calcular() para que coincida con lo mostrado)
+  let reservaInput = parseARS(document.getElementById('reserva-diaria').value);
+  if (isNaN(reservaInput) || reservaInput < 0) reservaInput = 0;
+  const diarioArs = Math.min(Math.max(0, excedente), reservaInput);
+  const restoExcedente = Math.max(0, excedente) - diarioArs;
 
   let pctC, pctK, pctJ;
   if (fase === 1) { pctC = 0.25; pctK = 0.50; pctJ = 0.25; }
   else { pctC = 0; pctK = 0.70; pctJ = 0.30; }
 
-  const colUSD = (Math.max(0, excedente) * pctC) / mep;
-  const casUSD = (Math.max(0, excedente) * pctK) / mep;
-  const jubUSD = (Math.max(0, excedente) * pctJ) / mep;
+  const colUSD = (restoExcedente * pctC) / mep;
+  const casUSD = (restoExcedente * pctK) / mep;
+  const jubUSD = (restoExcedente * pctJ) / mep;
 
   const row = {
     year,
@@ -3024,6 +3938,7 @@ document.getElementById('registrar-historico-btn').addEventListener('click', asy
     ingreso_ars: ingreso,
     gastos_ars: gastos,
     excedente_ars: excedente,
+    diario_ars: diarioArs,
     mep,
     excedente_usd: excedente / mep,
     colchon_usd: colUSD,
@@ -3067,7 +3982,12 @@ document.querySelectorAll('input[name="fase"]').forEach(el => {
 });
 
 // Input de reserva uso diario (monto en ARS)
-document.getElementById('reserva-diaria').addEventListener('input', calcular);
+// Distinguimos input del USER (pasa a manual) vs assignment programático en calcular()
+// que solo cambia .value y NO dispara 'input'.
+document.getElementById('reserva-diaria').addEventListener('input', () => {
+  reservaDiariaAuto = false;
+  calcular();
+});
 document.getElementById('reserva-diaria').addEventListener('blur', e => {
   const n = parseARS(e.target.value);
   e.target.value = n > 0 ? formatNumberAR(n) : '';
@@ -3132,77 +4052,207 @@ function renderHistoricoView() {
   });
 
   renderLineChart(rowsWithAcc);
+  renderSueldoChart(rowsWithAcc);
 }
 
-function renderLineChart(rows) {
-  const svg = document.getElementById('line-chart');
-  svg.innerHTML = '';
-  const W = 800, H = 260, P = 42;
-
+// Gráfico de evolución del sueldo — barras pareadas (ARS azul, USD verde) + líneas de tendencia.
+// UNA sola escala numérica (sin moneda en los ticks):
+//   - barra azul: millones de pesos (ars / 1_000_000)
+//   - barra verde: miles de dólares (usd / 1_000)
+function renderSueldoChart(rows) {
+  const chart = getChart('sueldo-chart');
+  if (!chart) return;
   if (rows.length === 0) {
-    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', W / 2); t.setAttribute('y', H / 2);
-    t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('fill', '#9ca3af');
-    t.textContent = 'Sin datos todavía';
-    svg.appendChild(t);
+    chart.setOption({
+      graphic: [{
+        type: 'text', left: 'center', top: 'middle',
+        style: { text: 'Sin registros todavía', fontSize: 14, fill: '#9ca3af', fontFamily: 'inherit' }
+      }],
+      xAxis: { show: false }, yAxis: { show: false }, series: []
+    }, true);
     return;
   }
 
-  const maxVal = Math.max(...rows.map(r => r.accC + r.accK + r.accJ), 1);
-  const stepX = rows.length > 1 ? (W - 2 * P) / (rows.length - 1) : 0;
+  const labels = rows.map(r => MESES_CORTOS[MESES.indexOf(r.mes)] + ' ' + String(r.year).slice(-2));
+  const arsAbs = rows.map(r => parseFloat(r.ingreso_ars) || 0);
+  const usdAbs = rows.map(r => {
+    const mep = parseFloat(r.mep) || 1;
+    return (parseFloat(r.ingreso_ars) || 0) / mep;
+  });
+  const arsScaled = arsAbs.map(v => +(v / 1_000_000).toFixed(3));
+  const usdScaled = usdAbs.map(v => +(v / 1_000).toFixed(3));
 
-  for (let i = 0; i <= 4; i++) {
-    const y = P + ((H - 2 * P) * i) / 4;
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', P); line.setAttribute('x2', W - P);
-    line.setAttribute('y1', y); line.setAttribute('y2', y);
-    line.setAttribute('stroke', '#e5e7eb'); line.setAttribute('stroke-width', '1');
-    svg.appendChild(line);
+  chart.setOption({
+    color: ['#1e3a8a', '#10b981'],
+    legend: {
+      data: ['Millones de pesos (ARS)', 'Miles de dólares (USD)'],
+      bottom: 0,
+      itemWidth: 14, itemHeight: 8,
+      textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' }
+    },
+    grid: { left: 50, right: 24, top: 24, bottom: 56 },
+    tooltip: {
+      ...CHART_TOOLTIP,
+      trigger: 'axis',
+      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(30,58,138,0.04)' } },
+      formatter: params => {
+        const idx = params[0].dataIndex;
+        const r = rows[idx];
+        return `<strong>${r.mes} ${r.year}</strong><br/>` +
+          `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1e3a8a;margin-right:6px;"></span>ARS: ${formatARS(arsAbs[idx])}<br/>` +
+          `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#10b981;margin-right:6px;"></span>USD: ${formatUSD(usdAbs[idx])}`;
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      axisLine: { lineStyle: { color: '#cbd5e1' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { lineStyle: { color: '#475569', width: 1.2 } },
+      axisTick: { show: true, length: 6, lineStyle: { color: '#475569', width: 1.4 } },
+      minorTick: { show: true, splitNumber: 5, length: 3, lineStyle: { color: '#94a3b8', width: 1 } },
+      axisLabel: { color: '#475569', fontSize: 11, fontFamily: 'inherit', fontWeight: 500 },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+      minorSplitLine: { show: false }
+    },
+    series: [
+      {
+        name: 'Millones de pesos (ARS)',
+        type: 'bar',
+        data: arsScaled,
+        barWidth: '32%',
+        barGap: '12%',
+        itemStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
+            { offset: 0, color: '#60a5fa' }, { offset: 1, color: '#1e3a8a' }
+          ]},
+          borderRadius: [4, 4, 0, 0]
+        },
+        z: 2
+      },
+      {
+        name: 'Miles de dólares (USD)',
+        type: 'bar',
+        data: usdScaled,
+        barWidth: '32%',
+        itemStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
+            { offset: 0, color: '#6ee7b7' }, { offset: 1, color: '#10b981' }
+          ]},
+          borderRadius: [4, 4, 0, 0]
+        },
+        z: 2
+      },
+      {
+        name: 'Tendencia ARS', type: 'line', data: arsScaled,
+        smooth: true, showSymbol: true, symbolSize: 7,
+        itemStyle: { color: '#0f1f54', borderColor: 'white', borderWidth: 2 },
+        lineStyle: { width: 2, color: '#0f1f54' },
+        tooltip: { show: false },
+        legendHoverLink: false,
+        z: 5
+      },
+      {
+        name: 'Tendencia USD', type: 'line', data: usdScaled,
+        smooth: true, showSymbol: true, symbolSize: 7,
+        itemStyle: { color: '#047857', borderColor: 'white', borderWidth: 2 },
+        lineStyle: { width: 2, color: '#047857' },
+        tooltip: { show: false },
+        legendHoverLink: false,
+        z: 5
+      }
+    ]
+  }, true);
+}
 
-    const value = maxVal * (1 - i / 4);
-    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    label.setAttribute('x', P - 6); label.setAttribute('y', y + 4);
-    label.setAttribute('text-anchor', 'end');
-    label.setAttribute('fill', '#9ca3af');
-    label.setAttribute('font-size', '11');
-    label.textContent = formatUSDCompact(value);
-    svg.appendChild(label);
+// Ahorro acumulado USD — stacked area por frasco
+function renderLineChart(rows) {
+  const chart = getChart('line-chart');
+  if (!chart) return;
+  if (rows.length === 0) {
+    chart.setOption({
+      graphic: [{
+        type: 'text', left: 'center', top: 'middle',
+        style: { text: 'Sin datos todavía', fontSize: 14, fill: '#9ca3af', fontFamily: 'inherit' }
+      }],
+      xAxis: { show: false }, yAxis: { show: false }, series: []
+    }, true);
+    return;
   }
 
-  rows.forEach((r, i) => {
-    const x = P + stepX * i;
-    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    label.setAttribute('x', x); label.setAttribute('y', H - P + 16);
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('fill', '#6b7280');
-    label.setAttribute('font-size', '10');
-    label.textContent = MESES_CORTOS[MESES.indexOf(r.mes)] + ' ' + String(r.year).slice(-2);
-    svg.appendChild(label);
+  const labels = rows.map(r => MESES_CORTOS[MESES.indexOf(r.mes)] + ' ' + String(r.year).slice(-2));
+  const accC = rows.map(r => +(r.accC || 0).toFixed(2));
+  const accK = rows.map(r => +(r.accK || 0).toFixed(2));
+  const accJ = rows.map(r => +(r.accJ || 0).toFixed(2));
+
+  const areaGrad = (c1, c0) => ({
+    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+    colorStops: [{ offset: 0, color: c1 }, { offset: 1, color: c0 }]
   });
 
-  const series = [
-    { color: '#f59e0b', getter: r => r.accC },
-    { color: '#10b981', getter: r => r.accK },
-    { color: '#8b5cf6', getter: r => r.accJ },
-    { color: '#1e3a8a', getter: r => r.accC + r.accK + r.accJ, width: 2.5 }
-  ];
-  series.forEach(s => {
-    const pts = rows.map((r, i) => [P + stepX * i, H - P - ((s.getter(r) / maxVal) * (H - 2 * P))]);
-    const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    line.setAttribute('d', path);
-    line.setAttribute('stroke', s.color);
-    line.setAttribute('stroke-width', s.width || 1.8);
-    line.setAttribute('fill', 'none');
-    svg.appendChild(line);
-    pts.forEach(([x, y]) => {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', x); c.setAttribute('cy', y);
-      c.setAttribute('r', 3); c.setAttribute('fill', s.color);
-      svg.appendChild(c);
-    });
-  });
+  chart.setOption({
+    color: ['#f59e0b', '#10b981', '#8b5cf6'],
+    legend: {
+      data: ['Colchón', 'Frasco Casa', 'Frasco Jubilación'],
+      bottom: 0,
+      itemWidth: 14, itemHeight: 8,
+      textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' }
+    },
+    grid: { left: 60, right: 24, top: 24, bottom: 50 },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      axisLine: { lineStyle: { color: '#cbd5e1' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11, fontFamily: 'inherit', formatter: v => formatUSDCompact(v) },
+      splitLine: { lineStyle: { color: '#f1f5f9' } }
+    },
+    tooltip: {
+      ...CHART_TOOLTIP,
+      trigger: 'axis',
+      formatter: params => {
+        const idx = params[0].dataIndex;
+        const r = rows[idx];
+        const total = params.reduce((s, p) => s + (p.value || 0), 0);
+        return `<strong>${r.mes} ${r.year}</strong><br/>` +
+          params.map(p => `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${formatUSD(p.value)}`).join('<br/>') +
+          `<br/><strong style="color:#1e3a8a;">Total: ${formatUSD(total)}</strong>`;
+      }
+    },
+    series: [
+      {
+        name: 'Colchón', type: 'line', stack: 'total',
+        data: accC, smooth: true, showSymbol: false,
+        lineStyle: { width: 0 },
+        areaStyle: { color: areaGrad('rgba(245,158,11,0.75)', 'rgba(245,158,11,0.18)') },
+        emphasis: { focus: 'series' }
+      },
+      {
+        name: 'Frasco Casa', type: 'line', stack: 'total',
+        data: accK, smooth: true, showSymbol: false,
+        lineStyle: { width: 0 },
+        areaStyle: { color: areaGrad('rgba(16,185,129,0.75)', 'rgba(16,185,129,0.18)') },
+        emphasis: { focus: 'series' }
+      },
+      {
+        name: 'Frasco Jubilación', type: 'line', stack: 'total',
+        data: accJ, smooth: true, showSymbol: false,
+        lineStyle: { width: 0 },
+        areaStyle: { color: areaGrad('rgba(139,92,246,0.75)', 'rgba(139,92,246,0.18)') },
+        emphasis: { focus: 'series' }
+      }
+    ]
+  }, true);
 }
 
 /* =====================================================
@@ -3238,14 +4288,12 @@ async function initApp() {
     if (cfg) {
       if (cfg.default_ingreso) document.getElementById('ingreso').value = formatNumberAR(cfg.default_ingreso);
       if (cfg.default_mep) document.getElementById('mep').value = formatNumberAR(cfg.default_mep);
-      if (cfg.reserva_diaria_ars !== null && cfg.reserva_diaria_ars !== undefined) {
-        document.getElementById('reserva-diaria').value = formatNumberAR(cfg.reserva_diaria_ars);
-      }
+      // reserva_diaria_ars: ya no se carga, ahora se propone como 50% del excedente.
     }
     // Aplicar permisos de rol (gastos_only por defecto si no hay config — más seguro)
     applyRolePermissions(cfg?.role || 'gastos_only');
 
-    // Default mes en selector
+    // Default mes en selector legacy
     document.getElementById('calc-mes-select').value = MESES[new Date().getMonth()];
 
     // Mobile: selector de mes en tab Gastos
@@ -3258,7 +4306,10 @@ async function initApp() {
     await renderCalcYearSelect();
 
     actualizarRadios();
-    calcular();
+
+    // Inicializar carrusel en mes/año actual y disparar carga
+    const now = new Date();
+    await setCalcMonth(now.getFullYear(), now.getMonth());
   } catch (err) {
     console.error(err);
     showToast('Error inicializando: ' + err.message, 'error');
@@ -4226,6 +5277,23 @@ document.getElementById('iol-disconnect-btn').addEventListener('click', async ()
     showToast('Error al desconectar: ' + err.message, 'error');
   }
 });
+
+// ECharts: resize global cuando cambia el tamaño de la ventana.
+// Aparte del resize del canvas, re-renderemos para que las configs responsive
+// (legend orient, doughnut center, etc.) se apliquen al nuevo breakpoint.
+let _resizeDebounce;
+window.addEventListener('resize', () => {
+  Object.values(chartInstances).forEach(c => { try { c.resize(); } catch {} });
+  clearTimeout(_resizeDebounce);
+  _resizeDebounce = setTimeout(() => {
+    try { if (gastosCache) renderChart(); } catch {}
+    try { if (historicoCache && historicoCache.length > 0) renderHistoricoView(); } catch {}
+  }, 150);
+});
+// Resize después de cambiar de tab — los charts en contenedor oculto inicializaron con tamaño 0
+function resizeAllCharts() {
+  Object.values(chartInstances).forEach(c => { try { c.resize(); } catch {} });
+}
 
 // PWA: registrar service worker si está disponible
 if ('serviceWorker' in navigator) {

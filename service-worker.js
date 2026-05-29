@@ -1,12 +1,13 @@
 // Service Worker para PWA — Plan Cloud
 // Estrategia: cache-first para assets estáticos, network-first para datos de Supabase.
 
-const CACHE_NAME = 'plan-cloud-v16';
+const CACHE_NAME = 'plan-cloud-v31';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js'
 ];
 
 // Install: precachear los assets estáticos
