@@ -613,6 +613,73 @@
   @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
 
   .calc-field { margin-bottom: 14px; }
+
+  /* Cabecera del panel Parámetros: el carrusel actúa como título */
+  .calc-mes-header {
+    margin: -4px -6px 18px -6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .calc-mes-header .carrusel-mes-label {
+    font-size: 1.05em;
+    letter-spacing: 0.06em;
+  }
+  .calc-mes-header .carrusel-btn {
+    font-size: 1.05em;
+  }
+
+  /* Accordion (sección colapsable de gastos fijos) */
+  .accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 8px 0;
+    font-family: inherit;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.92em;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+  .accordion-header:hover { color: #1e3a8a; }
+  .accordion-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .accordion-summary-amount {
+    color: #1e3a8a;
+    font-weight: 700;
+    font-size: 0.95em;
+  }
+  .accordion-chevron {
+    color: #6b7280;
+    transition: transform 0.2s ease;
+    font-size: 0.95em;
+    display: inline-flex;
+    width: 18px;
+    justify-content: center;
+  }
+  .accordion-header[aria-expanded="false"] .accordion-chevron {
+    transform: rotate(-90deg);
+  }
+  .accordion-header[aria-expanded="false"] + .accordion-body {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+  }
+  .accordion-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s ease;
+    max-height: 1500px;
+    margin-top: 8px;
+  }
   .calc-field label {
     display: block;
     font-weight: 600;
@@ -1807,9 +1874,7 @@
 
       <div class="calc-grid">
         <div class="panel">
-          <h3>Parámetros</h3>
-
-          <div class="calc-field">
+          <div class="calc-field calc-mes-header">
             <div class="calc-mes-carrusel">
               <button class="carrusel-btn" id="carrusel-prev" type="button" aria-label="Mes anterior">‹</button>
               <div class="carrusel-mes-label">
@@ -1843,13 +1908,21 @@
             <input type="text" inputmode="decimal" id="ingreso" value="6.000.000">
           </div>
 
-          <div class="calc-field">
-            <label>Gastos fijos mensuales (ARS)</label>
-            <div id="deducciones-list" class="deducciones-list"></div>
-            <button id="add-deduccion-btn" class="add-button" style="padding: 6px 14px; font-size: 0.88em;">+ Agregar gasto</button>
-            <div class="gastos-total-display">
-              <span>Total gastos</span>
-              <span class="amount" id="gastos-total">$0</span>
+          <div class="calc-field accordion" id="gastos-accordion">
+            <button class="accordion-header" type="button" id="gastos-accordion-header" aria-expanded="true">
+              <span>Gastos fijos mensuales (ARS)</span>
+              <span class="accordion-summary">
+                <span class="accordion-summary-amount" id="gastos-accordion-summary">$0</span>
+                <span class="accordion-chevron">▾</span>
+              </span>
+            </button>
+            <div class="accordion-body" id="gastos-accordion-body">
+              <div id="deducciones-list" class="deducciones-list"></div>
+              <button id="add-deduccion-btn" class="add-button" style="padding: 6px 14px; font-size: 0.88em;">+ Agregar gasto</button>
+              <div class="gastos-total-display">
+                <span>Total gastos</span>
+                <span class="amount" id="gastos-total">$0</span>
+              </div>
             </div>
           </div>
 
@@ -3489,6 +3562,9 @@ function calcular() {
   const fase = document.querySelector('input[name="fase"]:checked').value;
 
   document.getElementById('gastos-total').textContent = formatARS(gastos);
+  // Mostrar también el total en el header del acordeón (cuando está colapsado se sigue viendo)
+  const accordionSummary = document.getElementById('gastos-accordion-summary');
+  if (accordionSummary) accordionSummary.textContent = formatARS(gastos);
 
   const excedente = ingreso - gastos;
 
@@ -3581,6 +3657,13 @@ document.getElementById('add-deduccion-btn').addEventListener('click', () => {
   deducciones.push({ desc: '', monto: 0 });
   renderDeducciones();
   calcular();
+});
+
+// Toggle del acordeón de Gastos fijos
+document.getElementById('gastos-accordion-header').addEventListener('click', () => {
+  const header = document.getElementById('gastos-accordion-header');
+  const expanded = header.getAttribute('aria-expanded') === 'true';
+  header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
 });
 
 // ============== Carrusel mes/año ==============
