@@ -299,6 +299,96 @@
     font-size: 1.05em;
   }
 
+  /* Header del panel con gear de acciones en la esquina sup. der. */
+  .panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .panel-header h3 { margin-bottom: 0; }
+  .panel-title-block { min-width: 0; flex: 1; }
+  .panel-subhead {
+    font-size: 0.82em;
+    color: #6b7280;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .panel-subhead strong { color: #1e3a8a; font-weight: 600; }
+  .panel-subhead-dot { color: #cbd5e1; }
+  /* Meta inline al lado de "Posiciones" (formato discreto) */
+  .panel-title-with-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .panel-meta {
+    font-size: 0.72em;
+    font-weight: 400;
+    color: #9ca3af;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .panel-gear-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .panel-gear-btn {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s, transform 0.2s;
+    line-height: 0;
+  }
+  .panel-gear-btn:hover {
+    color: #1e3a8a;
+    background: #f1f5f9;
+    transform: rotate(30deg);
+  }
+  .panel-gear-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 180px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+    padding: 4px;
+    z-index: 50;
+  }
+  .panel-gear-item {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 0.9em;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .panel-gear-item:hover { background: #f1f5f9; color: #1e3a8a; }
+  .panel-gear-item.danger { color: #b91c1c; }
+  .panel-gear-item.danger:hover { background: #fee2e2; color: #991b1b; }
+
   /* ========== Gastos table ========== */
   .gastos-table-wrapper {
     /* Desktop: scrollbar SIEMPRE visible (no auto-hide del browser).
@@ -2410,22 +2500,36 @@
 
               <!-- Sub-estado: conectado -->
               <div id="iol-connected" class="hidden">
-                <div class="panel iol-status-row">
-                  <div>
-                    <strong>IOL conectado:</strong> <span id="iol-username-display"></span>
-                    <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
-                      <span id="iol-last-sync">Sin sincronizar todavía</span>
-                      <span id="iol-error-icon" class="iol-error-icon hidden" title="">!</span>
-                    </div>
-                  </div>
-                  <div style="display: flex; gap: 8px;">
-                    <button id="iol-refresh-btn" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px;">Refrescar</button>
-                    <button id="iol-disconnect-btn" class="btn-ghost" style="color: #dc2626; border-color: #dc2626;">Desconectar</button>
-                  </div>
+                <!-- Botones legacy ocultos: las acciones viven ahora en el gear del panel Posiciones -->
+                <div style="display: none;">
+                  <button id="iol-refresh-btn"></button>
+                  <button id="iol-disconnect-btn"></button>
                 </div>
 
                 <div class="panel">
-                  <h3>Posiciones</h3>
+                  <div class="panel-header">
+                    <div class="panel-title-block">
+                      <h3>Posiciones</h3>
+                      <div class="panel-subhead">
+                        <strong>IOL:</strong>
+                        <span id="iol-last-sync">Sin sincronizar todavía</span>
+                        <span id="iol-error-icon" class="iol-error-icon hidden" title="">!</span>
+                        <span id="iol-delta-pill" class="cocos-delta-pill" style="display:none;"></span>
+                      </div>
+                    </div>
+                    <div class="panel-gear-wrapper">
+                      <button type="button" class="panel-gear-btn" id="iol-gear-btn" aria-label="Opciones">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                          <circle cx="12" cy="12" r="3"/>
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                      </button>
+                      <div class="panel-gear-menu hidden" id="iol-gear-menu">
+                        <button type="button" class="panel-gear-item" id="iol-menu-refresh">Actualizar</button>
+                        <button type="button" class="panel-gear-item danger" id="iol-menu-reconnect">Reconectar</button>
+                      </div>
+                    </div>
+                  </div>
                   <div id="iol-positions-cards" class="iol-cards-mobile"></div>
                   <div class="iol-positions-desktop" style="overflow-x: auto;">
                     <table class="historico-table" id="iol-positions-table">
@@ -2484,25 +2588,37 @@
             <!-- === COCOS VIEW === -->
             <div id="broker-view-cocos" class="broker-view hidden">
 
-              <div class="panel iol-status-row">
-                <div>
-                  <strong>Cocos Capital</strong>
-                  <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
-                    <span id="external-last-update">Sin importaciones</span>
-                    <span id="cocos-delta-pill" class="cocos-delta-pill" style="display:none;"></span>
-                  </div>
-                </div>
-                <div class="cocos-import-row">
-                  <label class="btn-primary csv-import-btn">
-                    Importar CSV
-                    <input type="file" accept=".csv,.txt" hidden id="external-csv-upload">
-                  </label>
-                </div>
+              <!-- Input legacy oculto: importar ahora vive en el gear del panel Posiciones -->
+              <div style="display:none;">
+                <input type="file" accept=".csv,.txt" id="external-csv-upload">
               </div>
 
               <!-- Posiciones Cocos -->
               <div class="panel">
-                <h3>Posiciones</h3>
+                <div class="panel-header">
+                  <div class="panel-title-block">
+                    <h3>Posiciones</h3>
+                    <div class="panel-subhead">
+                      <strong>Cocos:</strong>
+                      <span id="external-last-update">Sin importaciones</span>
+                      <span id="cocos-delta-pill" class="cocos-delta-pill" style="display:none;"></span>
+                    </div>
+                  </div>
+                  <div class="panel-gear-wrapper">
+                    <button type="button" class="panel-gear-btn" id="cocos-gear-btn" aria-label="Opciones">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                      </svg>
+                    </button>
+                    <div class="panel-gear-menu hidden" id="cocos-gear-menu">
+                      <label class="panel-gear-item" id="cocos-menu-import">
+                        Importar CSV
+                        <input type="file" accept=".csv,.txt" hidden id="cocos-gear-csv-input">
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 <div id="external-positions-cards" class="iol-cards-mobile"></div>
                 <div class="iol-positions-desktop" style="overflow-x:auto;">
                   <table class="historico-table" id="external-positions-table">
@@ -5046,6 +5162,35 @@ async function fetchLatestPortfolioDirect() {
   };
 }
 
+// Total USD del snapshot inmediatamente anterior al pasado. Sirve para la pastilla "variación día".
+// Devuelve null si no hay snapshot previo.
+async function fetchIolPreviousTotalUSD(currentSnapshotAt, mep) {
+  if (!currentUser || !currentSnapshotAt) return null;
+  const { data: prev } = await sb
+    .from('iol_positions')
+    .select('snapshot_at')
+    .eq('user_id', currentUser.id)
+    .lt('snapshot_at', currentSnapshotAt)
+    .order('snapshot_at', { ascending: false })
+    .limit(1);
+  const prevAt = prev?.[0]?.snapshot_at;
+  if (!prevAt) return null;
+  const [posRes, balRes] = await Promise.all([
+    sb.from('iol_positions').select('moneda, valorizado').eq('user_id', currentUser.id).eq('snapshot_at', prevAt),
+    sb.from('iol_balances').select('moneda, saldo').eq('user_id', currentUser.id).eq('snapshot_at', prevAt)
+  ]);
+  let total = 0;
+  for (const p of (posRes.data || [])) {
+    const v = parseFloat(p.valorizado) || 0;
+    total += p.moneda === 'dolar_Estadounidense' ? v : v / mep;
+  }
+  for (const b of (balRes.data || [])) {
+    const s = parseFloat(b.saldo) || 0;
+    total += b.moneda === 'dolar_Estadounidense' ? s : s / mep;
+  }
+  return { snapshotAt: prevAt, totalUsd: total };
+}
+
 async function loadAndRenderIol() {
   showIolView('loading');
   try {
@@ -5056,13 +5201,18 @@ async function loadAndRenderIol() {
       fetchExternalPositionsLatest('cocos'),
       fetchExternalHistory('cocos', 90)
     ]);
+    // Total USD del snapshot inmediatamente anterior al actual (para pastilla "variación día")
+    const iolPrevTotalUSD = portfolio.connected && portfolio.snapshot_at
+      ? await fetchIolPreviousTotalUSD(portfolio.snapshot_at, (cfg?.default_mep) || 1500)
+      : null;
     iolState = {
       ...iolState,
       ...portfolio,
       mapping,
       mepRate: (cfg?.default_mep) || 1500,
       external: externalPositions,
-      externalHistory
+      externalHistory,
+      iolPrevTotalUSD
     };
 
     const hasIol = portfolio.connected;
@@ -5613,22 +5763,28 @@ document.getElementById('external-csv-upload').addEventListener('change', e => {
 });
 
 function renderIolDashboard() {
-  document.getElementById('iol-username-display').textContent = iolState.username || '';
+  // El username display puede no existir en versiones que muestran solo el subhead
+  const usernameEl = document.getElementById('iol-username-display');
+  if (usernameEl) usernameEl.textContent = iolState.username || '';
 
   const lastSyncEl = document.getElementById('iol-last-sync');
-  if (iolState.last_sync_at) {
-    lastSyncEl.textContent = 'Última sincronización: ' + relativeTime(iolState.last_sync_at);
-  } else {
-    lastSyncEl.textContent = 'Sin sincronizar todavía';
+  if (lastSyncEl) {
+    if (iolState.last_sync_at) {
+      lastSyncEl.textContent = 'Última sincronización: ' + relativeTime(iolState.last_sync_at);
+    } else {
+      lastSyncEl.textContent = 'Sin sincronizar todavía';
+    }
   }
 
   const errorIcon = document.getElementById('iol-error-icon');
-  if (iolState.last_sync_error) {
-    errorIcon.classList.remove('hidden');
-    errorIcon.title = 'Última sync falló: ' + iolState.last_sync_error;
-  } else {
-    errorIcon.classList.add('hidden');
-    errorIcon.title = '';
+  if (errorIcon) {
+    if (iolState.last_sync_error) {
+      errorIcon.classList.remove('hidden');
+      errorIcon.title = 'Última sync falló: ' + iolState.last_sync_error;
+    } else {
+      errorIcon.classList.add('hidden');
+      errorIcon.title = '';
+    }
   }
 
   // Calcular totales unificados a USD usando MEP
@@ -5671,6 +5827,10 @@ function renderIolDashboard() {
     }
   }
 
+  // Total SOLO IOL (positions + balances), antes de sumar externals.
+  // Lo usamos para la pastilla de variación diaria del header IOL.
+  const iolOnlyTotalUSD = totalUSD;
+
   // Sumar posiciones externas (Cocos u otros brokers importados por CSV)
   // Cash rows (ARS/USD del CSV) van también al "Disponible para operar"
   for (const p of (iolState.external || [])) {
@@ -5685,6 +5845,24 @@ function renderIolDashboard() {
     if (isCashPosition(p)) {
       if (p.moneda === 'USD') { disponibleUSD += total; disponibleARS += total * mep; }
       else { disponibleUSD += total / mep; disponibleARS += total; }
+    }
+  }
+
+  // Pastilla de variación diaria total (IOL puro vs snapshot anterior IOL)
+  const iolPill = document.getElementById('iol-delta-pill');
+  if (iolPill) {
+    const prev = iolState.iolPrevTotalUSD;
+    if (prev && prev.totalUsd > 0 && iolOnlyTotalUSD > 0) {
+      const delta = iolOnlyTotalUSD - prev.totalUsd;
+      const pct = (delta / prev.totalUsd) * 100;
+      const positive = delta >= 0;
+      const arrow = positive ? '▲' : '▼';
+      iolPill.style.display = 'inline-flex';
+      iolPill.className = 'cocos-delta-pill ' + (Math.abs(delta) < 0.01 ? 'neutral' : positive ? 'positive' : 'negative');
+      iolPill.innerHTML = `${arrow} ${positive ? '+' : '−'}${formatUSD(Math.abs(delta))} <span style="opacity:0.7;font-weight:500;">(${positive ? '+' : '−'}${Math.abs(pct).toFixed(2)}%)</span>`;
+      iolPill.title = `Variación respecto al snapshot del ${new Date(prev.snapshotAt).toLocaleDateString('es-AR')}`;
+    } else {
+      iolPill.style.display = 'none';
     }
   }
 
@@ -6024,6 +6202,54 @@ document.getElementById('iol-disconnect-btn').addEventListener('click', async ()
 document.getElementById('pie-drill-back')?.addEventListener('click', () => {
   pieDrillExtras = false;
   renderPieLastMonth();
+});
+
+/* ====== Gear menus en panels de Posiciones (IOL y Cocos) ====== */
+function togglePanelGearMenu(menuId, btnId) {
+  const menu = document.getElementById(menuId);
+  const allMenus = document.querySelectorAll('.panel-gear-menu');
+  const isOpen = menu && !menu.classList.contains('hidden');
+  allMenus.forEach(m => m.classList.add('hidden'));
+  if (!isOpen && menu) menu.classList.remove('hidden');
+}
+document.getElementById('iol-gear-btn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  togglePanelGearMenu('iol-gear-menu', 'iol-gear-btn');
+});
+document.getElementById('cocos-gear-btn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  togglePanelGearMenu('cocos-gear-menu', 'cocos-gear-btn');
+});
+// Click fuera → cierra cualquier menú gear
+document.addEventListener('click', e => {
+  if (e.target.closest('.panel-gear-wrapper')) return;
+  document.querySelectorAll('.panel-gear-menu').forEach(m => m.classList.add('hidden'));
+});
+
+// IOL: Actualizar → reusa el handler del botón legacy
+document.getElementById('iol-menu-refresh')?.addEventListener('click', () => {
+  document.getElementById('iol-gear-menu').classList.add('hidden');
+  document.getElementById('iol-refresh-btn').click();
+});
+// IOL: Reconectar → cierra sesión actual (mismo handler que Desconectar)
+document.getElementById('iol-menu-reconnect')?.addEventListener('click', () => {
+  document.getElementById('iol-gear-menu').classList.add('hidden');
+  document.getElementById('iol-disconnect-btn').click();
+});
+
+// Cocos: Importar CSV — al cambiar el input file (oculto en el menu), delega al pipeline existente
+document.getElementById('cocos-gear-csv-input')?.addEventListener('change', e => {
+  document.getElementById('cocos-gear-menu').classList.add('hidden');
+  const file = e.target.files[0];
+  if (file) {
+    const dateFromName = extractDateFromCsvName(file.name);
+    const dateStr = dateFromName || new Date().toLocaleDateString('en-CA');
+    if (!dateFromName) {
+      showToast(`No pude detectar la fecha en "${file.name}". Uso la de hoy.`, 'error');
+    }
+    importCocosCSV(file, dateStr);
+  }
+  e.target.value = '';
 });
 
 // ECharts: resize global cuando cambia el tamaño de la ventana.
