@@ -301,9 +301,34 @@
 
   /* ========== Gastos table ========== */
   .gastos-table-wrapper {
-    overflow-x: auto;
+    /* Desktop: scrollbar SIEMPRE visible (no auto-hide del browser).
+       Mobile: auto — el SO ya muestra el scrollbar al tocar. */
+    overflow-x: scroll;
+    overflow-y: hidden;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    scrollbar-gutter: stable;
+  }
+  /* Scrollbar fino con colores de la app (track celeste claro = subtotales) */
+  .gastos-table-wrapper::-webkit-scrollbar {
+    height: 10px;
+  }
+  .gastos-table-wrapper::-webkit-scrollbar-track {
+    background: #eff6ff;
+    border-radius: 5px;
+  }
+  .gastos-table-wrapper::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 5px;
+  }
+  .gastos-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+  /* Firefox */
+  .gastos-table-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #eff6ff;
   }
   .gastos-table {
     width: 100%;
@@ -322,7 +347,7 @@
   }
   .gastos-table th.col-concepto { text-align: left; min-width: 200px; max-width: 220px; padding-left: 12px; }
   .gastos-table th.col-total { background: #1e40af; min-width: 130px; }
-  .gastos-table th.col-delete { background: #1e3a8a; min-width: 50px; width: 50px; }
+  .gastos-table th.col-delete { background: #1e3a8a; min-width: 78px; width: 78px; }
   .gastos-table th.month-col,
   .gastos-table td.month-col { min-width: 115px; }
 
@@ -334,6 +359,8 @@
     left: 0;
     z-index: 2;
     background: white;
+    text-align: left;
+    padding-left: 12px;
   }
   .gastos-table thead th.col-concepto { background: #1e3a8a; z-index: 3; }
   .gastos-table tbody tr:hover td.col-concepto { background: #f9fafb; }
@@ -342,7 +369,7 @@
   .gastos-table th.col-total,
   .gastos-table td.col-total {
     position: sticky;
-    right: 50px;
+    right: 78px;
     z-index: 2;
     background: white;
   }
@@ -356,9 +383,14 @@
     right: 0;
     z-index: 2;
     background: white;
-    min-width: 50px;
-    width: 50px;
+    min-width: 78px;
+    width: 78px;
     text-align: center;
+    white-space: nowrap;
+  }
+  .gastos-table td.col-delete .move-row,
+  .gastos-table td.col-delete .remove-row {
+    margin: 0 1px;
   }
   .gastos-table thead th.col-delete { background: #1e3a8a; z-index: 3; }
   .gastos-table tbody tr:hover td.col-delete { background: #f9fafb; }
@@ -427,6 +459,97 @@
     line-height: 1;
   }
   .remove-row:hover { background: #fecaca; }
+  .move-row {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: none;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: 700;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .move-row:hover { background: #dbeafe; }
+
+  /* Filas header de categoría */
+  .cat-header-row td {
+    background: #f8fafc !important;
+    font-weight: 600;
+    color: #1e3a8a;
+    padding: 10px 6px !important;
+    border-top: 2px solid #cbd5e1;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .cat-header-row td.col-concepto { padding-left: 12px !important; }
+  .gastos-table tbody tr.cat-header-row:hover td.col-concepto,
+  .gastos-table tbody tr.cat-header-row:hover td.col-total,
+  .gastos-table tbody tr.cat-header-row:hover td.col-delete {
+    background: #f8fafc !important;
+  }
+  .cat-header-label {
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.95em !important;
+  }
+  .cat-header-label:hover { color: #0f1f54; }
+  .cat-toggle {
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+    color: #6b7280;
+    transition: transform 0.15s;
+    margin-right: 6px;
+  }
+  .cat-toggle.collapsed { transform: rotate(-90deg); }
+  .cat-name { color: #1e3a8a; font-weight: 700; }
+  .cat-count {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e3a8a;
+    font-size: 0.72em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+  .cat-header-total {
+    color: #1e3a8a !important;
+    font-weight: 700;
+    background: #eff6ff !important;
+  }
+
+  /* Fila "+ Agregar gasto X" al final de cada categoría */
+  .cat-add-row td {
+    background: white !important;
+    padding: 4px 6px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  .cat-add-cell { padding: 6px 12px !important; }
+  .cat-add-spacer { background: white !important; }
+  /* Botón "Agregar gasto" — formato de botón con border dashed, alineado al borde
+     izquierdo de la columna concepto (sin tabulación extra) */
+  .cat-add-btn {
+    display: inline-block;
+    background: #eff6ff;
+    border: 1px dashed #3b82f6;
+    color: #1e3a8a;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .cat-add-btn:hover {
+    background: #dbeafe;
+    border-color: #1e3a8a;
+    border-style: solid;
+  }
   .totals-row { background: #eff6ff !important; font-weight: 700; }
   .totals-row td {
     padding: 10px 6px !important;
@@ -501,12 +624,38 @@
   .stat-value { color: #1e3a8a; font-size: 1.4em; font-weight: 700; line-height: 1.1; }
   .stat-sub { color: #6b7280; font-size: 0.78em; margin-top: 4px; font-style: italic; }
 
-  /* Contenedores ECharts */
-  .echarts-container { width: 100%; }
+  /* Contenedores ECharts: forzar 100% del panel padre.
+     ECharts crea un canvas hijo cuyo tamaño deriva del clientWidth de este div;
+     si por alguna razón el div no llena su parent (ej. inline-block default,
+     un parent flex sin grow), el doughnut se ve achicado al lado de su panel. */
+  .echarts-container {
+    width: 100% !important;
+    max-width: 100%;
+    display: block;
+    box-sizing: border-box;
+    min-width: 0;
+  }
   .echarts-pie { height: 340px; }
   @media (max-width: 520px) {
-    .echarts-pie { height: 460px; }
+    .echarts-pie { height: 320px; }
   }
+
+  /* Botón "← Volver" del drill-down del doughnut */
+  .pie-drill-back-btn {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.78em;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 10px;
+    vertical-align: middle;
+    transition: background 0.15s;
+  }
+  .pie-drill-back-btn:hover { background: #dbeafe; }
 
   /* Gráfico de torta + leyenda al costado */
   .pie-wrapper {
@@ -758,7 +907,17 @@
   }
   .calc-excedente.blue { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
   .calc-excedente.green { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
+  .calc-excedente.yellow { background: linear-gradient(135deg, #854d0e 0%, #eab308 100%); }
+  .calc-excedente.orange { background: linear-gradient(135deg, #9a3412 0%, #f97316 100%); }
   .calc-excedente.red { background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); }
+  .calc-excedente.alarm {
+    background: linear-gradient(135deg, #450a0a 0%, #b91c1c 100%);
+    animation: alarmPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes alarmPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+    50%      { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+  }
   .calc-excedente .calc-label { font-size: 0.9em; opacity: 0.9; margin-bottom: 6px; }
   .calc-excedente .calc-value { font-size: 1.8em; font-weight: 700; line-height: 1.2; }
   .calc-excedente .calc-sub { font-size: 1em; opacity: 0.9; margin-top: 4px; }
@@ -1237,6 +1396,58 @@
   .iol-positive { color: #059669; font-weight: 600; }
   .iol-negative { color: #dc2626; font-weight: 600; }
 
+  /* Pastilla de variación día a día en el header de Cocos */
+  .cocos-delta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 0.82em;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .cocos-delta-pill.positive { background: #d1fae5; color: #065f46; }
+  .cocos-delta-pill.negative { background: #fee2e2; color: #991b1b; }
+  .cocos-delta-pill.neutral  { background: #f1f5f9; color: #475569; }
+
+  /* Fila de import del CSV: fecha + botón */
+  .cocos-import-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .csv-date-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.75em;
+    color: #6b7280;
+  }
+  .csv-date-input {
+    padding: 6px 8px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.88em;
+    color: #1f2937;
+    background: white;
+    cursor: pointer;
+  }
+  .csv-date-input:focus { outline: none; border-color: #3b82f6; }
+  .csv-import-btn {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0 !important;
+    width: auto !important;
+    padding: 9px 16px !important;
+    font-size: 0.9em !important;
+    align-self: flex-end;
+  }
+
   /* Ocultar scrollbars visualmente en navs/sidebars con overflow-x (manteniendo el scroll) */
   .tab-nav,
   .brokers-sidebar {
@@ -1566,7 +1777,9 @@
     /* Selector mobile de mes - visible y agregado al flujo */
     .mobile-mes-selector { display: flex; }
 
-    /* Tabla de gastos en mobile: ocultar todos los meses excepto el activo */
+    /* Tabla de gastos en mobile: ocultar todos los meses excepto el activo.
+       Y scrollbar en auto (no scroll fijo) — en mobile no aporta verlo siempre. */
+    .gastos-table-wrapper { overflow-x: auto; }
     .gastos-table { min-width: 0; font-size: 0.85em; }
     .gastos-table .month-col {
       display: none;
@@ -1809,10 +2022,6 @@
           </table>
         </div>
         <div class="gastos-actions">
-          <button id="add-concepto-btn" class="add-button gastos-action-btn">
-            <span class="btn-full">+ Agregar concepto</span>
-            <span class="btn-short">+ Concepto</span>
-          </button>
           <button id="export-pdf-btn" class="add-button gastos-action-btn export-btn">
             <span class="btn-full">Exportar mes a PDF</span>
             <span class="btn-short">PDF</span>
@@ -1847,7 +2056,10 @@
       </div>
 
       <div class="panel">
-        <h3>Composición del último mes (<span id="pie-month-label">—</span>)</h3>
+        <h3>
+          Composición del último mes (<span id="pie-month-label">—</span>)
+          <button id="pie-drill-back" type="button" class="pie-drill-back-btn" style="display:none;">← Volver</button>
+        </h3>
         <div id="pie-chart" class="echarts-container echarts-pie"></div>
         <div id="pie-empty" class="info-box" style="display: none;">
           Sin gastos cargados todavía para mostrar la composición.
@@ -2277,14 +2489,14 @@
                   <strong>Cocos Capital</strong>
                   <div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">
                     <span id="external-last-update">Sin importaciones</span>
+                    <span id="cocos-delta-pill" class="cocos-delta-pill" style="display:none;"></span>
                   </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                  <label class="upload-button" style="padding: 8px 14px; font-size: 0.92em;">
-                    <span>Importar CSV</span>
+                <div class="cocos-import-row">
+                  <label class="btn-primary csv-import-btn">
+                    Importar CSV
                     <input type="file" accept=".csv,.txt" hidden id="external-csv-upload">
                   </label>
-                  <button id="external-clear-btn" class="btn-ghost" style="color: #dc2626; border-color: #dc2626;">Limpiar</button>
                 </div>
               </div>
 
@@ -2296,12 +2508,15 @@
                   <table class="historico-table" id="external-positions-table">
                     <thead>
                       <tr>
-                        <th>Instrumento</th>
+                        <th>Símbolo</th>
+                        <th>Descripción</th>
+                        <th>País</th>
                         <th>Cantidad</th>
-                        <th>Precio</th>
-                        <th>Moneda</th>
-                        <th>Total</th>
+                        <th>PPC</th>
+                        <th>Último</th>
+                        <th>Valorizado</th>
                         <th>USD ≈</th>
+                        <th>Gan. %</th>
                         <th>Frasco</th>
                       </tr>
                     </thead>
@@ -2652,12 +2867,15 @@ async function fetchGastos(year) {
   return data;
 }
 
-async function insertGasto(year) {
+async function insertGasto(year, categoria = 'fijo') {
   if (!currentUser) return null;
-  const maxOrden = gastosCache.reduce((m, g) => Math.max(m, g.orden || 0), 0);
+  // orden = máximo dentro de la misma categoría + 1 (para que se inserte al final de su grupo)
+  const maxOrden = gastosCache
+    .filter(g => (g.categoria || 'fijo') === categoria)
+    .reduce((m, g) => Math.max(m, g.orden || 0), 0);
   const { data, error } = await sb
     .from('gastos')
-    .insert({ user_id: currentUser.id, year, orden: maxOrden + 1 })
+    .insert({ user_id: currentUser.id, year, orden: maxOrden + 1, categoria })
     .select()
     .single();
   if (error) { showToast('Error: ' + error.message, 'error'); return null; }
@@ -2836,111 +3054,253 @@ async function loadAndRenderGastos() {
   setStatus('saved', 'Sincronizado');
 }
 
+// Categorías colapsadas (UI state, no se persiste)
+const collapsedCats = new Set();
+const CATEGORIAS = [
+  { id: 'fijo', label: 'Gastos fijos', addLabel: 'Agregar gasto' },
+  { id: 'extraordinario', label: 'Gastos extraordinarios', addLabel: 'Agregar gasto' }
+];
+
 function renderGastosTable() {
   const tbody = document.getElementById('gastos-tbody');
   tbody.innerHTML = '';
+  CATEGORIAS.forEach(cat => renderCategoriaSection(tbody, cat));
+}
 
-  gastosCache.forEach((item, idx) => {
-    const tr = document.createElement('tr');
-    tr.dataset.id = item.id;
+function renderCategoriaSection(tbody, cat) {
+  const items = gastosCache.filter(g => (g.categoria || 'fijo') === cat.id);
+  const isCollapsed = collapsedCats.has(cat.id);
+  // Total de la categoría (suma de todos los meses de todos los items)
+  const catTotal = items.reduce((s, it) => s + rowSum(it), 0);
 
-    // Concepto + badge con el código (visible al hover; doble-click para editar)
-    const tdConcepto = document.createElement('td');
-    tdConcepto.className = 'col-concepto concepto-cell';
-    const conceptoInput = document.createElement('input');
-    conceptoInput.type = 'text';
-    conceptoInput.className = 'cell-input cell-text';
-    conceptoInput.value = item.concepto || '';
-    conceptoInput.placeholder = 'Concepto';
-    const refreshTooltip = () => {
-      conceptoInput.title = item.codigo
-        ? `Código: ${item.codigo}\n(doble-click para editar)`
-        : 'Doble-click para asignar un código';
-    };
-    refreshTooltip();
-    conceptoInput.addEventListener('input', e => {
-      gastosCache[idx].concepto = e.target.value;
-      scheduleGastoUpdate(item.id, { concepto: e.target.value });
-    });
-    conceptoInput.addEventListener('dblclick', async () => {
-      const nuevo = prompt('Código del concepto (vacío para borrar):', item.codigo || '');
-      if (nuevo === null) return; // cancel
-      const trimmed = nuevo.trim();
-      gastosCache[idx].codigo = trimmed;
-      item.codigo = trimmed;
-      try {
-        await updateGasto(item.id, { codigo: trimmed });
-        refreshTooltip();
-        if (badge) badge.textContent = trimmed || '—';
-      } catch {}
-    });
-    tdConcepto.appendChild(conceptoInput);
-    // Badge flotante que aparece al pasar el mouse sobre la celda (tooltip propio)
-    let badge = null;
-    if (item.codigo) {
-      badge = document.createElement('span');
-      badge.className = 'codigo-badge';
-      badge.textContent = item.codigo;
-      tdConcepto.appendChild(badge);
+  // === Fila header de categoría ===
+  const trHead = document.createElement('tr');
+  trHead.className = 'cat-header-row';
+  trHead.dataset.cat = cat.id;
+
+  const tdLabel = document.createElement('td');
+  tdLabel.className = 'col-concepto cat-header-label';
+  // Usamos siempre el mismo glifo (▾) y rotamos via CSS para que el ancho del chevron
+  // sea idéntico colapsado/expandido y los textos de categoría queden alineados.
+  tdLabel.innerHTML = `<span class="cat-toggle${isCollapsed ? ' collapsed' : ''}">▾</span><span class="cat-name">${cat.label}</span>`;
+  tdLabel.addEventListener('click', () => {
+    if (isCollapsed) collapsedCats.delete(cat.id); else collapsedCats.add(cat.id);
+    renderGastosTable();
+  });
+  trHead.appendChild(tdLabel);
+
+  // 12 celdas vacías para mantener alineación
+  for (let m = 0; m < 12; m++) {
+    const td = document.createElement('td');
+    td.className = 'month-col cat-header-cell';
+    td.dataset.monthIdx = m;
+    trHead.appendChild(td);
+  }
+  const tdHeadTotal = document.createElement('td');
+  tdHeadTotal.className = 'col-total cat-header-total';
+  tdHeadTotal.textContent = catTotal > 0 ? formatARS(catTotal) : '—';
+  trHead.appendChild(tdHeadTotal);
+  const tdHeadDel = document.createElement('td');
+  tdHeadDel.className = 'col-delete';
+  trHead.appendChild(tdHeadDel);
+  tbody.appendChild(trHead);
+
+  if (isCollapsed) return;
+
+  // === Filas de items de la categoría ===
+  items.forEach(item => {
+    const idx = gastosCache.indexOf(item);
+    tbody.appendChild(buildGastoRow(item, idx));
+  });
+
+  // === Fila "+ Agregar" de la categoría ===
+  // No usamos colspan porque rompe el layout sticky de la primera columna.
+  // En cambio: el botón vive en la celda concepto sticky-left y el resto son celdas vacías.
+  const trAdd = document.createElement('tr');
+  trAdd.className = 'cat-add-row';
+  const tdAdd = document.createElement('td');
+  tdAdd.className = 'col-concepto cat-add-cell';
+  tdAdd.innerHTML = `<button class="cat-add-btn" type="button">${cat.addLabel}</button>`;
+  tdAdd.querySelector('button').addEventListener('click', async () => {
+    const nuevo = await insertGasto(currentYear, cat.id);
+    if (nuevo) {
+      gastosCache.push(nuevo);
+      renderGastosTable();
+      renderTotalsRow();
+      // Focus en la nueva fila
+      setTimeout(() => {
+        const rows = tbody.querySelectorAll(`tr[data-id="${nuevo.id}"]`);
+        if (rows.length > 0) rows[0].querySelector('input')?.focus();
+      }, 0);
     }
-    tr.appendChild(tdConcepto);
+  });
+  trAdd.appendChild(tdAdd);
+  // Celdas vacías para los 12 meses + total + delete (mantienen alineación con la tabla)
+  for (let m = 0; m < 12; m++) {
+    const td = document.createElement('td');
+    td.className = 'month-col cat-add-spacer';
+    td.dataset.monthIdx = m;
+    trAdd.appendChild(td);
+  }
+  const tdAddTotal = document.createElement('td');
+  tdAddTotal.className = 'col-total cat-add-spacer';
+  trAdd.appendChild(tdAddTotal);
+  const tdAddDel = document.createElement('td');
+  tdAddDel.className = 'col-delete cat-add-spacer';
+  trAdd.appendChild(tdAddDel);
+  tbody.appendChild(trAdd);
+}
 
-    // Meses
-    MESES_LOWER.forEach((mesKey, mIdx) => {
-      const td = document.createElement('td');
-      td.className = 'month-col';
-      td.dataset.monthIdx = mIdx;
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.inputMode = 'decimal';
-      input.className = 'cell-input';
-      const val = parseFloat(item[mesKey]) || 0;
-      input.value = val > 0 ? formatNumberAR(val) : '';
-      input.placeholder = '—';
-      input.addEventListener('input', e => {
-        const num = parseARS(e.target.value);
-        gastosCache[idx][mesKey] = num;
-        updateRowTotal(tr, gastosCache[idx]);
-        renderTotalsRow();
-        renderStats();
-        renderChart();
-        scheduleGastoUpdate(item.id, { [mesKey]: num });
-      });
-      input.addEventListener('blur', e => {
-        const n = parseARS(e.target.value);
-        e.target.value = n > 0 ? formatNumberAR(n) : '';
-      });
-      td.appendChild(input);
-      tr.appendChild(td);
+function buildGastoRow(item, idx) {
+  const tr = document.createElement('tr');
+  tr.dataset.id = item.id;
+  const isFijo = (item.categoria || 'fijo') === 'fijo';
+
+  // Concepto + badge con el código (visible al hover; doble-click para editar)
+  const tdConcepto = document.createElement('td');
+  tdConcepto.className = 'col-concepto concepto-cell';
+  const conceptoInput = document.createElement('input');
+  conceptoInput.type = 'text';
+  conceptoInput.className = 'cell-input cell-text';
+  conceptoInput.value = item.concepto || '';
+  conceptoInput.placeholder = 'Concepto';
+  const refreshTooltip = () => {
+    conceptoInput.title = item.codigo
+      ? `Código: ${item.codigo}\n(doble-click para editar)`
+      : 'Doble-click para asignar un código';
+  };
+  refreshTooltip();
+  conceptoInput.addEventListener('input', e => {
+    gastosCache[idx].concepto = e.target.value;
+    scheduleGastoUpdate(item.id, { concepto: e.target.value });
+  });
+  conceptoInput.addEventListener('dblclick', async () => {
+    const nuevo = prompt('Código del concepto (vacío para borrar):', item.codigo || '');
+    if (nuevo === null) return; // cancel
+    const trimmed = nuevo.trim();
+    gastosCache[idx].codigo = trimmed;
+    item.codigo = trimmed;
+    try {
+      await updateGasto(item.id, { codigo: trimmed });
+      refreshTooltip();
+      if (badge) badge.textContent = trimmed || '—';
+    } catch {}
+  });
+  tdConcepto.appendChild(conceptoInput);
+  // Badge flotante que aparece al pasar el mouse sobre la celda (tooltip propio)
+  let badge = null;
+  if (item.codigo) {
+    badge = document.createElement('span');
+    badge.className = 'codigo-badge';
+    badge.textContent = item.codigo;
+    tdConcepto.appendChild(badge);
+  }
+  tr.appendChild(tdConcepto);
+
+  // Meses
+  const monthInputs = [];
+  MESES_LOWER.forEach((mesKey, mIdx) => {
+    const td = document.createElement('td');
+    td.className = 'month-col';
+    td.dataset.monthIdx = mIdx;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'decimal';
+    input.className = 'cell-input';
+    const val = parseFloat(item[mesKey]) || 0;
+    input.value = val > 0 ? formatNumberAR(val) : '';
+    input.placeholder = '—';
+    monthInputs.push(input);
+    input.addEventListener('input', e => {
+      const num = parseARS(e.target.value);
+      gastosCache[idx][mesKey] = num;
+      const fieldsToSave = { [mesKey]: num };
+      // GASTO FIJO: propagar a meses siguientes que estén vacíos.
+      // Un gasto fijo se repite mes a mes — si ponés $100K en marzo, abre/may/jun
+      // se autocompletan en $100K salvo que ya tengan otro valor cargado.
+      if (isFijo && num > 0) {
+        for (let m = mIdx + 1; m < 12; m++) {
+          const futKey = MESES_LOWER[m];
+          const futVal = parseFloat(gastosCache[idx][futKey]) || 0;
+          if (futVal === 0) {
+            gastosCache[idx][futKey] = num;
+            fieldsToSave[futKey] = num;
+            monthInputs[m].value = formatNumberAR(num);
+          }
+        }
+      }
+      updateRowTotal(tr, gastosCache[idx]);
+      renderTotalsRow();
+      renderStats();
+      renderChart();
+      // También refrescar el total de la categoría
+      refreshCatHeaderTotals();
+      scheduleGastoUpdate(item.id, fieldsToSave);
     });
-
-    // Total
-    const tdTotal = document.createElement('td');
-    tdTotal.className = 'row-total col-total';
-    tdTotal.textContent = formatARS(rowSum(item));
-    tr.appendChild(tdTotal);
-
-    // Eliminar
-    const tdDel = document.createElement('td');
-    tdDel.className = 'col-delete';
-    const delBtn = document.createElement('button');
-    delBtn.className = 'remove-row';
-    delBtn.textContent = '×';
-    delBtn.addEventListener('click', async () => {
-      if (!confirm(`¿Eliminar "${item.concepto || 'este concepto'}"?`)) return;
-      try {
-        await deleteGasto(item.id);
-        gastosCache.splice(idx, 1);
-        renderGastosTable();
-        renderTotalsRow();
-        renderStats();
-        renderChart();
-      } catch {}
+    input.addEventListener('blur', e => {
+      const n = parseARS(e.target.value);
+      e.target.value = n > 0 ? formatNumberAR(n) : '';
     });
-    tdDel.appendChild(delBtn);
-    tr.appendChild(tdDel);
+    td.appendChild(input);
+    tr.appendChild(td);
+  });
 
-    tbody.appendChild(tr);
+  // Total
+  const tdTotal = document.createElement('td');
+  tdTotal.className = 'row-total col-total';
+  tdTotal.textContent = formatARS(rowSum(item));
+  tr.appendChild(tdTotal);
+
+  // Acciones: mover entre categorías + eliminar
+  const tdDel = document.createElement('td');
+  tdDel.className = 'col-delete';
+
+  const moveBtn = document.createElement('button');
+  moveBtn.className = 'move-row';
+  moveBtn.title = isFijo ? 'Mover a extraordinarios' : 'Mover a fijos';
+  moveBtn.textContent = '↕';
+  moveBtn.addEventListener('click', async () => {
+    const newCat = isFijo ? 'extraordinario' : 'fijo';
+    try {
+      await updateGasto(item.id, { categoria: newCat });
+      gastosCache[idx].categoria = newCat;
+      renderGastosTable();
+      renderTotalsRow();
+    } catch {}
+  });
+  tdDel.appendChild(moveBtn);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'remove-row';
+  delBtn.textContent = '×';
+  delBtn.addEventListener('click', async () => {
+    if (!confirm(`¿Eliminar "${item.concepto || 'este concepto'}"?`)) return;
+    try {
+      await deleteGasto(item.id);
+      const i = gastosCache.indexOf(item);
+      if (i >= 0) gastosCache.splice(i, 1);
+      renderGastosTable();
+      renderTotalsRow();
+      renderStats();
+      renderChart();
+    } catch {}
+  });
+  tdDel.appendChild(delBtn);
+  tr.appendChild(tdDel);
+
+  return tr;
+}
+
+// Actualiza los totales en los headers de cada categoría (sin re-render completo)
+function refreshCatHeaderTotals() {
+  CATEGORIAS.forEach(cat => {
+    const items = gastosCache.filter(g => (g.categoria || 'fijo') === cat.id);
+    const catTotal = items.reduce((s, it) => s + rowSum(it), 0);
+    const headerRow = document.querySelector(`#gastos-tbody tr.cat-header-row[data-cat="${cat.id}"]`);
+    if (headerRow) {
+      const totalCell = headerRow.querySelector('.cat-header-total');
+      if (totalCell) totalCell.textContent = catTotal > 0 ? formatARS(catTotal) : '—';
+    }
   });
 }
 
@@ -3059,11 +3419,25 @@ const PIE_PALETTE = [
 
 /* ============== ECharts: helpers comunes ============== */
 const chartInstances = {};
+const chartObservers = {};
 function getChart(id) {
   if (!chartInstances[id]) {
     const el = document.getElementById(id);
     if (!el || typeof echarts === 'undefined') return null;
     chartInstances[id] = echarts.init(el, null, { renderer: 'canvas' });
+    // ResizeObserver: cuando el container cambia de tamaño (tab switch, rotación,
+    // colapso de panels, etc.), redimensiona el canvas para que ocupe el 100%.
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => {
+        try { chartInstances[id]?.resize(); } catch {}
+      });
+      ro.observe(el);
+      chartObservers[id] = ro;
+    }
+  } else {
+    // Si la instancia ya existe, forzar resize por si el container cambió
+    // (cambio de tab, viewport, panel padre)
+    try { chartInstances[id].resize(); } catch {}
   }
   return chartInstances[id];
 }
@@ -3071,6 +3445,10 @@ function disposeChart(id) {
   if (chartInstances[id]) {
     chartInstances[id].dispose();
     delete chartInstances[id];
+  }
+  if (chartObservers[id]) {
+    chartObservers[id].disconnect();
+    delete chartObservers[id];
   }
 }
 // Tooltip común estilo light theme
@@ -3088,11 +3466,17 @@ function renderChart() {
   renderGastosLineChart();
 }
 
-// Doughnut (rosco) de composición del último mes con total al centro
+// Estado del doughnut: si está expandido el grupo "Gastos extraordinarios" para ver el detalle.
+let pieDrillExtras = false;
+
+// Doughnut (rosco) de composición del último mes con total al centro.
+// Por defecto los gastos extraordinarios se agrupan en una sola porción.
+// Click en esa porción → drill-down al detalle. Click en el centro o en el botón "← Volver" → vuelve.
 function renderPieLastMonth() {
   const chartEl = document.getElementById('pie-chart');
   const emptyEl = document.getElementById('pie-empty');
   const monthLabel = document.getElementById('pie-month-label');
+  const drillBtn = document.getElementById('pie-drill-back');
   if (!chartEl) return;
 
   const totalsMes = MESES_LOWER.map(m => colSum(m));
@@ -3105,52 +3489,81 @@ function renderPieLastMonth() {
     chartEl.style.display = 'none';
     emptyEl.style.display = 'block';
     monthLabel.textContent = '—';
+    if (drillBtn) drillBtn.style.display = 'none';
+    pieDrillExtras = false;
     disposeChart('pie-chart');
     return;
   }
   emptyEl.style.display = 'none';
   chartEl.style.display = '';
-  monthLabel.textContent = `${MESES[lastIdx]} ${currentYear}`;
 
   const mesKey = MESES_LOWER[lastIdx];
-  const items = gastosCache
+  const rawItems = gastosCache
     .filter(g => (parseFloat(g[mesKey]) || 0) > 0)
-    .map(g => ({ name: g.concepto || '(sin nombre)', value: parseFloat(g[mesKey]) || 0 }))
+    .map(g => ({ name: g.concepto || '(sin nombre)', value: parseFloat(g[mesKey]) || 0, categoria: g.categoria || 'fijo' }))
     .sort((a, b) => b.value - a.value);
+
+  const extras = rawItems.filter(i => i.categoria === 'extraordinario');
+
+  // Si no hay extraordinarios, asegurarse de no quedar en drill-down vacío
+  if (extras.length === 0) pieDrillExtras = false;
+
+  // Vista actual:
+  //   - drill-down: solo extraordinarios
+  //   - normal: fijos individuales + 1 slice agregado "Gastos extraordinarios"
+  let items;
+  if (pieDrillExtras) {
+    items = extras;
+  } else {
+    const fijos = rawItems.filter(i => i.categoria === 'fijo');
+    if (extras.length > 0) {
+      const sumExtras = extras.reduce((s, i) => s + i.value, 0);
+      items = [...fijos, { name: 'Gastos extraordinarios', value: sumExtras, _isExtrasGroup: true }];
+    } else {
+      items = fijos;
+    }
+    // Ordenar por valor (con extraordinarios mezclados según su suma total)
+    items.sort((a, b) => b.value - a.value);
+  }
   const total = items.reduce((s, i) => s + i.value, 0);
+
+  // Label del mes / drill-down
+  if (pieDrillExtras) {
+    monthLabel.innerHTML = `${MESES[lastIdx]} ${currentYear} <span style="color:#6b7280;font-weight:400;font-size:0.85em;">· extraordinarios</span>`;
+  } else {
+    monthLabel.textContent = `${MESES[lastIdx]} ${currentYear}`;
+  }
+  if (drillBtn) drillBtn.style.display = pieDrillExtras ? 'inline-flex' : 'none';
 
   const chart = getChart('pie-chart');
   if (!chart) return;
 
-  // Layout responsive: en mobile (ancho < 520) leyenda abajo, doughnut centrado.
+  // Layout: leyenda SIEMPRE a la derecha en vertical (mobile y desktop). Cambia el center
+  // del doughnut y el tamaño del texto según el ancho del contenedor.
   const containerW = chartEl.clientWidth || 360;
   const isMobile = containerW < 520;
 
-  const legendCfg = isMobile ? {
-    orient: 'horizontal',
-    bottom: 8,
-    left: 'center',
+  // Leyenda pegada al doughnut (no al borde derecho del panel)
+  const legendCfg = {
+    orient: 'vertical',
+    left: isMobile ? '68%' : '52%',
+    right: 8,
+    top: 12,
+    bottom: 12,
     type: 'scroll',
     pageIconColor: '#1e3a8a',
     pageIconInactiveColor: '#cbd5e1',
-    pageTextStyle: { color: '#6b7280', fontSize: 11 },
+    pageTextStyle: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' },
     itemWidth: 11, itemHeight: 11,
-    itemGap: 10,
-    textStyle: { color: '#374151', fontSize: 11, fontFamily: 'inherit' },
-    formatter: name => name.length > 14 ? name.slice(0, 14) + '…' : name
-  } : {
-    orient: 'vertical',
-    right: 8,
-    top: 'middle',
-    itemWidth: 12, itemHeight: 12,
-    itemGap: 8,
-    textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' },
-    formatter: name => name.length > 24 ? name.slice(0, 24) + '…' : name
+    itemGap: 6,
+    textStyle: { color: '#374151', fontSize: isMobile ? 11 : 12, fontFamily: 'inherit' },
+    formatter: name => {
+      const max = isMobile ? 16 : 28;
+      return name.length > max ? name.slice(0, max) + '…' : name;
+    }
   };
 
-  const seriesCenter = isMobile ? ['50%', '40%'] : ['33%', '50%'];
-  const totalLabelLeft = isMobile ? '50%' : '33%';
-  const totalLabelTop = isMobile ? '40%' : '50%';
+  const seriesCenter = isMobile ? ['38%', '50%'] : ['28%', '50%'];
 
   chart.setOption({
     color: PIE_PALETTE,
@@ -3158,24 +3571,32 @@ function renderPieLastMonth() {
       ...CHART_TOOLTIP,
       trigger: 'item',
       confine: true,
-      formatter: p => `<strong>${p.name}</strong><br/>${formatARS(p.value)} <span style="color:#6b7280;">(${p.percent.toFixed(1)}%)</span>`
+      formatter: p => {
+        const isGroup = p.data && p.data._isExtrasGroup;
+        const hint = isGroup ? '<br/><span style="color:#3b82f6;font-size:0.85em;">Tocá para ver el detalle</span>' : '';
+        return `<strong>${p.name}</strong><br/>${formatARS(p.value)} <span style="color:#6b7280;">(${p.percent.toFixed(1)}%)</span>${hint}`;
+      }
     },
     legend: legendCfg,
     graphic: [{
       type: 'group',
-      left: totalLabelLeft,
-      top: totalLabelTop,
+      left: seriesCenter[0],
+      top: seriesCenter[1],
       children: [
         { type: 'text', top: -16, left: 'center', style: { text: 'Total', fontSize: 11, fill: '#6b7280', fontFamily: 'inherit' } },
-        { type: 'text', top: 2, left: 'center', style: { text: formatARS(total), fontSize: 17, fontWeight: 700, fill: '#1e3a8a', fontFamily: 'inherit' } }
+        { type: 'text', top: 2, left: 'center', style: { text: formatARS(total), fontSize: 16, fontWeight: 700, fill: '#1e3a8a', fontFamily: 'inherit' } }
       ]
     }],
     series: [{
       type: 'pie',
-      radius: isMobile ? ['45%', '70%'] : ['52%', '78%'],
+      radius: isMobile ? ['45%', '70%'] : ['50%', '76%'],
       center: seriesCenter,
       avoidLabelOverlap: true,
       padAngle: 2,
+      // Slices muy chicos (< ~2% del total) son ilegibles si su ángulo es nativo.
+      // minAngle: 6 los estira para que sean siempre visibles (compromiso conocido —
+      // distorsiona ligeramente la proporción pero garantiza visibilidad).
+      minAngle: 6,
       itemStyle: {
         borderRadius: 6,
         borderColor: 'white',
@@ -3188,9 +3609,35 @@ function renderPieLastMonth() {
         scaleSize: 6,
         itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.18)' }
       },
-      data: items
+      data: items.map(it => {
+        // El slice agregado "Gastos extraordinarios" usa un color único (gris oscuro)
+        // que NO está en PIE_PALETTE, así no se repite con ningún fijo.
+        if (it._isExtrasGroup) {
+          return {
+            ...it,
+            itemStyle: {
+              color: '#475569',
+              borderRadius: 6, borderColor: 'white', borderWidth: 2
+            }
+          };
+        }
+        return it;
+      })
     }]
   }, true);
+
+  // Click → drill-down sobre el grupo de extraordinarios
+  chart.off('click');
+  chart.on('click', params => {
+    if (params.data && params.data._isExtrasGroup) {
+      pieDrillExtras = true;
+      renderPieLastMonth();
+    }
+  });
+
+  // Resize por las dudas — si el chart se inicializó en un container con tamaño
+  // distinto al actual (ej. tab oculto al cargar), esto fuerza el ajuste.
+  requestAnimationFrame(() => { try { chart.resize(); } catch {} });
 }
 
 // Evolución mensual del año actual — bar chart con gradient
@@ -3253,19 +3700,7 @@ function renderGastosLineChart() {
   }, true);
 }
 
-document.getElementById('add-concepto-btn').addEventListener('click', async () => {
-  if (!currentYear) return;
-  const newGasto = await insertGasto(currentYear);
-  if (newGasto) {
-    gastosCache.push(newGasto);
-    renderGastosTable();
-    renderTotalsRow();
-    setTimeout(() => {
-      const rows = document.querySelectorAll('#gastos-tbody tr');
-      if (rows.length > 0) rows[rows.length - 1].querySelector('input').focus();
-    }, 0);
-  }
-});
+// (botón "+ Agregar concepto" global eliminado — ahora hay botón por categoría dentro de la tabla)
 
 // Generar gráfico de torta en un canvas off-screen y devolver dataURL
 function generatePieChartDataUrl(items, total, sizePx = 400) {
@@ -3606,26 +4041,38 @@ function calcular() {
 
   const box = document.getElementById('excedente-box');
   const diffEl = document.getElementById('excedente-diff');
-  box.classList.remove('red', 'blue', 'green');
+  box.classList.remove('red', 'blue', 'green', 'yellow', 'orange', 'alarm');
+
+  // Porcentaje del excedente sobre el ingreso (0–1).
+  // Umbrales (sobre ingreso):
+  //   <= 0%  → alarmante (rojo profundo + pulse)
+  //   <= 10% → rojo
+  //   <= 15% → naranja
+  //   < 20%  → amarillo
+  //   ~= 20% → azul (en target, tolerancia ±0.5%)
+  //    > 20% → verde
+  const pctIngreso = ingreso > 0 ? excedente / ingreso : 0;
 
   if (ingreso === 0) {
     box.classList.add('blue'); diffEl.textContent = '';
+  } else if (excedente <= 0) {
+    box.classList.add('alarm');
+    diffEl.textContent = '⚠ Estás gastando más de lo que ingresás. Faltan ' + formatARS(Math.abs(diff)) + ' para llegar al 20%.';
+  } else if (pctIngreso <= 0.10) {
+    box.classList.add('red');
+    diffEl.textContent = 'Solo ' + (pctIngreso * 100).toFixed(1) + '% del ingreso (target 20%).';
+  } else if (pctIngreso <= 0.15) {
+    box.classList.add('orange');
+    diffEl.textContent = (pctIngreso * 100).toFixed(1) + '% del ingreso — todavía lejos del 20%.';
+  } else if (pctIngreso < 0.195) {
+    box.classList.add('yellow');
+    diffEl.textContent = (pctIngreso * 100).toFixed(1) + '% del ingreso — cerca del 20%.';
+  } else if (pctIngreso <= 0.205) {
+    box.classList.add('blue');
+    diffEl.textContent = 'En target — 20% del ingreso (' + formatARS(target) + ').';
   } else {
-    const ratio = excedente / target;
-    if (ratio < 0.95) {
-      box.classList.add('red');
-      if (excedente < 0) {
-        diffEl.textContent = 'En negativo. Faltan ' + formatARS(Math.abs(diff)) + ' para llegar al 20% (' + formatARS(target) + ').';
-      } else {
-        diffEl.textContent = formatARS(Math.abs(diff)) + ' por debajo del 20% (target: ' + formatARS(target) + ').';
-      }
-    } else if (ratio <= 1.05) {
-      box.classList.add('blue');
-      diffEl.textContent = 'En target — 20% del ingreso (' + formatARS(target) + ').';
-    } else {
-      box.classList.add('green');
-      diffEl.textContent = '+' + formatARS(diff) + ' por encima del 20% (target: ' + formatARS(target) + ').';
-    }
+    box.classList.add('green');
+    diffEl.textContent = '+' + formatARS(diff) + ' por encima del 20% (' + (pctIngreso * 100).toFixed(1) + '% del ingreso).';
   }
 
   document.getElementById('diario-ars').textContent = formatARS(diarioArs);
@@ -3952,7 +4399,10 @@ async function writeBackDeduccion(idx) {
       [mesKey]: d.monto
     });
   } else if (d.desc && d.desc.trim() && d.monto > 0) {
-    // Insert nuevo en la planilla del año
+    // Insert nuevo en la planilla del año.
+    // Default: 'extraordinario' — la calculadora opera sobre un mes específico,
+    // así que un gasto agregado acá normalmente es puntual de ese mes.
+    // Si el user quiere que se repita mes a mes, lo mueve en la planilla.
     if (!currentUser) return;
     const { data, error } = await sb
       .from('gastos')
@@ -3961,7 +4411,8 @@ async function writeBackDeduccion(idx) {
         year,
         concepto: d.desc,
         [mesKey]: d.monto,
-        orden: 999  // al final
+        orden: 999,
+        categoria: 'extraordinario'
       })
       .select()
       .single();
@@ -4598,18 +5049,20 @@ async function fetchLatestPortfolioDirect() {
 async function loadAndRenderIol() {
   showIolView('loading');
   try {
-    const [portfolio, mapping, cfg, externalPositions] = await Promise.all([
+    const [portfolio, mapping, cfg, externalPositions, externalHistory] = await Promise.all([
       fetchLatestPortfolioDirect(),
       fetchIolMapping(),
       fetchUserConfig(),
-      fetchExternalPositionsLatest('cocos')
+      fetchExternalPositionsLatest('cocos'),
+      fetchExternalHistory('cocos', 90)
     ]);
     iolState = {
       ...iolState,
       ...portfolio,
       mapping,
       mepRate: (cfg?.default_mep) || 1500,
-      external: externalPositions
+      external: externalPositions,
+      externalHistory
     };
 
     const hasIol = portfolio.connected;
@@ -4625,31 +5078,130 @@ async function loadAndRenderIol() {
       selectBroker(selectedBroker || (hasIol ? 'iol' : 'cocos'));
     }
     renderExternalPositions();
+    renderCocosEvolution();
   } catch (err) {
     showIolView('empty');
     showToast('Error cargando inversiones: ' + err.message, 'error');
   }
 }
 
+// Pastilla de delta (último día vs anterior) en el header de Cocos.
+// Se muestra solo cuando hay ≥ 2 snapshots históricos.
+function renderCocosEvolution() {
+  const pill = document.getElementById('cocos-delta-pill');
+  if (!pill) return;
+
+  const history = iolState.externalHistory || [];
+  const mep = iolState.mepRate || 1500;
+  const series = aggregateExternalHistory(history, mep);
+
+  if (series.length < 2) {
+    pill.style.display = 'none';
+    return;
+  }
+
+  // Delta vs día anterior
+  const last = series[series.length - 1];
+  const prev = series[series.length - 2];
+  const delta = last.totalUsd - prev.totalUsd;
+  const pct = prev.totalUsd > 0 ? (delta / prev.totalUsd) * 100 : 0;
+  const positive = delta >= 0;
+  const arrow = positive ? '▲' : '▼';
+  pill.style.display = 'inline-flex';
+  pill.className = 'cocos-delta-pill ' + (Math.abs(delta) < 0.01 ? 'neutral' : positive ? 'positive' : 'negative');
+  pill.innerHTML = `${arrow} ${positive ? '+' : '−'}${formatUSD(Math.abs(delta))} <span style="opacity:0.7;font-weight:500;">(${positive ? '+' : '−'}${Math.abs(pct).toFixed(2)}%)</span>`;
+  pill.title = `Variación respecto al snapshot del ${prev.date}`;
+}
+
 // ===== Posiciones externas (Cocos, etc.) =====
 async function fetchExternalPositionsLatest(broker) {
   if (!currentUser) return [];
+  // Usa snapshot_date (estable por día). Si un día se reimporta el CSV, se borra
+  // y reinserta todo de ese día — el latest siempre es ese día.
   const { data: latest } = await sb
     .from('external_positions')
-    .select('snapshot_at')
+    .select('snapshot_date')
     .eq('user_id', currentUser.id)
     .eq('broker', broker)
-    .order('snapshot_at', { ascending: false })
+    .order('snapshot_date', { ascending: false })
     .limit(1);
-  const latestSnap = latest?.[0]?.snapshot_at;
-  if (!latestSnap) return [];
+  const latestDate = latest?.[0]?.snapshot_date;
+  if (!latestDate) return [];
   const { data } = await sb
     .from('external_positions')
     .select('*')
     .eq('user_id', currentUser.id)
     .eq('broker', broker)
-    .eq('snapshot_at', latestSnap);
+    .eq('snapshot_date', latestDate);
   return data || [];
+}
+
+// Histórico: todas las filas de los últimos N días para un broker.
+// Las usamos para calcular evolución del total y delta vs día anterior.
+async function fetchExternalHistory(broker, days = 90) {
+  if (!currentUser) return [];
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceStr = since.toLocaleDateString('en-CA');
+  const { data } = await sb
+    .from('external_positions')
+    .select('snapshot_date, moneda, total, simbolo, instrumento, precio, cantidad')
+    .eq('user_id', currentUser.id)
+    .eq('broker', broker)
+    .gte('snapshot_date', sinceStr)
+    .order('snapshot_date', { ascending: true });
+  return data || [];
+}
+
+// Calcula variaciones de precio por instrumento:
+//   - prevBySymbol  → precio/total en el snapshot anterior  → "Variación día"
+//   - firstBySymbol → precio/total del primer snapshot disponible → "Rendimiento"
+// Si hay menos de 2 snapshots, no hay variación diaria (devuelve null para prev).
+function calculateExternalDeltas(history) {
+  if (!history || history.length === 0) return null;
+  const dates = [...new Set(history.map(r => r.snapshot_date))].sort();
+  const latestDate = dates[dates.length - 1];
+  const prevDate = dates.length >= 2 ? dates[dates.length - 2] : null;
+  const prevBySymbol = {};
+  const firstBySymbol = {};
+  // history viene ordenado por snapshot_date asc → el primer match por símbolo es el más antiguo.
+  for (const r of history) {
+    const key = r.simbolo || r.instrumento;
+    if (prevDate && r.snapshot_date === prevDate) {
+      prevBySymbol[key] = {
+        precio: parseFloat(r.precio) || 0,
+        total: parseFloat(r.total) || 0
+      };
+    }
+    if (!firstBySymbol[key]) {
+      firstBySymbol[key] = {
+        precio: parseFloat(r.precio) || 0,
+        total: parseFloat(r.total) || 0,
+        date: r.snapshot_date
+      };
+    }
+  }
+  return { latestDate, prevDate, prevBySymbol, firstBySymbol };
+}
+
+// Agrupa filas por fecha y devuelve totales en USD/ARS al MEP vigente.
+// Si los snapshots históricos fueron tomados con MEPs distintos, el MEP "actual"
+// es una aproximación — pero como solo queremos ver tendencia, alcanza.
+function aggregateExternalHistory(rows, mep) {
+  const byDate = {};
+  for (const r of rows) {
+    const d = r.snapshot_date;
+    if (!byDate[d]) byDate[d] = { date: d, totalUsd: 0, totalArs: 0 };
+    const t = parseFloat(r.total) || 0;
+    if (r.moneda === 'USD') {
+      byDate[d].totalUsd += t;
+      byDate[d].totalArs += t * mep;
+    } else {
+      byDate[d].totalUsd += t / mep;
+      byDate[d].totalArs += t;
+    }
+  }
+  return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Parser del CSV de Cocos: separador ;, decimal con coma
@@ -4689,7 +5241,7 @@ function parseCocosCSV(text) {
   return rows;
 }
 
-async function importCocosCSV(file) {
+async function importCocosCSV(file, snapshotDate) {
   if (!currentUser) return;
   const text = await file.text();
   let rows;
@@ -4703,15 +5255,20 @@ async function importCocosCSV(file) {
     showToast('CSV vacío o sin posiciones', 'error');
     return;
   }
-  // Borrar snapshots previos de Cocos (reemplazo total)
+  // snapshotDate: YYYY-MM-DD. Si no se pasa, usamos hoy en zona local.
+  const dateStr = snapshotDate || new Date().toLocaleDateString('en-CA');
+  // Idempotente: borra los snapshots existentes de esa fecha antes de insertar
+  // (permite re-importar el mismo día o corregir un día anterior sin duplicar).
   await sb.from('external_positions')
     .delete()
     .eq('user_id', currentUser.id)
-    .eq('broker', 'cocos');
+    .eq('broker', 'cocos')
+    .eq('snapshot_date', dateStr);
 
   const insertRows = rows.map(r => ({
     user_id: currentUser.id,
     broker: 'cocos',
+    snapshot_date: dateStr,
     instrumento: r.instrumento,
     simbolo: r.simbolo,
     cantidad: r.cantidad,
@@ -4725,7 +5282,7 @@ async function importCocosCSV(file) {
     showToast('Error guardando: ' + error.message, 'error');
     return;
   }
-  showToast(`Importadas ${rows.length} posiciones de Cocos`, 'success');
+  showToast(`Importadas ${rows.length} posiciones (${dateStr})`, 'success');
   await loadAndRenderIol();
 }
 
@@ -4744,6 +5301,38 @@ async function clearExternal(broker) {
 function isCashPosition(p) {
   return (p.simbolo === 'ARS' || p.simbolo === 'USD' || p.instrumento === 'ARS' || p.instrumento === 'USD')
     && parseFloat(p.precio) === 1;
+}
+
+// Capitaliza nombres de instrumentos:
+// - Texto base en title case (primera letra mayúscula por palabra).
+// - Stopwords (de, del, la, etc.) en minúsculas excepto la primera palabra.
+// - Abreviaciones financieras conocidas (FCI, USD, ETF, ON, etc.) en mayúsculas.
+function smartTitleCase(s) {
+  if (!s) return '';
+  const KEEP_UPPER = new Set([
+    'FCI','ETF','ON','CEDEAR','MM','CFD',
+    'USD','ARS','EUR','CHF','BRL','GBP','U$S',
+    'USA','AR','EEUU','EU','UK',
+    'S&P','IPO','OPA','PYME',
+    'YPF','VW','BBVA','BNP','BCRA','AFIP',
+    'SA','S.A.','SRL','S.R.L.','LTD','INC','INC.','LLC'
+  ]);
+  const STOPWORDS = new Set(['de','del','la','el','los','las','y','o','en','a','con','para','por','su','sus']);
+  return s.split(/\s+/).map((word, idx) => {
+    if (!word) return word;
+    const cleaned = word.replace(/[()]/g, '');
+    const upperKey = cleaned.toUpperCase();
+    if (KEEP_UPPER.has(upperKey)) return word.toUpperCase();
+    if (idx > 0 && STOPWORDS.has(cleaned.toLowerCase())) return word.toLowerCase();
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+}
+
+// Descripción del instrumento: nombre sin el (SIMBOLO) al final, en title case con abreviaciones.
+function getInstrumentDescription(p) {
+  let desc = p.instrumento || '';
+  desc = desc.replace(/\s*\([A-Z0-9_]+\)\s*$/i, '').trim();
+  return smartTitleCase(desc);
 }
 
 function renderExternalPositions() {
@@ -4835,29 +5424,74 @@ function renderExternalPositions() {
   emptyEl.style.display = 'none';
 
   const mep = iolState.mepRate || 1500;
+  // Deltas vs snapshot anterior (precio / total por símbolo)
+  const deltas = calculateExternalDeltas(iolState.externalHistory || []);
+
   let grandTotalUSD = 0;
   let grandTotalARS = 0;
+  let totalCostoUSD = 0;
+  let totalGananciaUSD = 0;
 
   positions.forEach(p => {
     const total = parseFloat(p.total) || 0;
+    const precio = parseFloat(p.precio) || 0;
+    const cantidad = parseFloat(p.cantidad) || 0;
     const isUSD = p.moneda === 'USD';
     const totalUSD = isUSD ? total : total / mep;
     const totalARS = isUSD ? total * mep : total;
     grandTotalUSD += totalUSD;
     grandTotalARS += totalARS;
 
-    // === Fila de tabla (desktop) ===
+    const key = p.simbolo || p.instrumento;
+    const prev = deltas?.prevBySymbol?.[key];
+    const first = deltas?.firstBySymbol?.[key];
+
+    // Variación día (vs snapshot anterior) — para card mobile
+    let varPct = null;
+    if (prev && prev.precio > 0 && precio > 0) {
+      varPct = ((precio - prev.precio) / prev.precio) * 100;
+    }
+    // PPC proxy: precio del primer snapshot disponible. Si no hay histórico, sin PPC.
+    const ppc = (first && first.precio > 0 && first.date !== deltas?.latestDate) ? first.precio : null;
+    let renPct = null;
+    if (ppc !== null && precio > 0) {
+      renPct = ((precio - ppc) / ppc) * 100;
+      // Acumular para el total
+      const costo = ppc * cantidad;
+      const ganancia = (precio - ppc) * cantidad;
+      if (isUSD) {
+        totalCostoUSD += costo;
+        totalGananciaUSD += ganancia;
+      } else {
+        totalCostoUSD += costo / mep;
+        totalGananciaUSD += ganancia / mep;
+      }
+    }
+    const varClass = varPct === null ? '' : (varPct >= 0 ? 'iol-positive' : 'iol-negative');
+    const varText = varPct === null
+      ? '—'
+      : (varPct >= 0 ? '▲ +' : '▼ ') + varPct.toFixed(2) + '%';
+    const renClass = renPct === null ? '' : (renPct >= 0 ? 'iol-positive' : 'iol-negative');
+    const renText = renPct === null
+      ? '—'
+      : (renPct >= 0 ? '+' : '') + renPct.toFixed(1) + '%';
+
+    // === Fila de tabla (desktop) — mismas columnas que IOL ===
     const tr = document.createElement('tr');
     const fmtNum = v => formatNumberAR(parseFloat(v) || 0);
+    const monedaSymbol = isUSD ? 'US$' : '$';
+    const descripcion = getInstrumentDescription(p);
+    const ppcText = ppc === null ? '—' : `${monedaSymbol} ${fmtNum(ppc)}`;
     tr.innerHTML = `
-      <td><strong>${p.simbolo || ''}</strong>
-        <div style="font-size: 0.78em; color: #6b7280; max-width: 280px; overflow: hidden; text-overflow: ellipsis;">${p.instrumento}</div>
-      </td>
+      <td><strong>${p.simbolo || ''}</strong></td>
+      <td style="font-size: 0.85em; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${descripcion}">${descripcion}</td>
+      <td>AR</td>
       <td>${fmtNum(p.cantidad)}</td>
-      <td>${fmtNum(p.precio)}</td>
-      <td>${p.moneda}</td>
-      <td><strong>${isUSD ? formatUSD(total) : formatARS(total)}</strong></td>
+      <td>${ppcText}</td>
+      <td>${monedaSymbol} ${fmtNum(precio)}</td>
+      <td><strong>${monedaSymbol} ${fmtNum(total)}</strong></td>
       <td style="color:#1e3a8a;">${formatUSD(totalUSD)}</td>
+      <td class="${renClass}">${renText}</td>
       <td></td>
     `;
 
@@ -4866,30 +5500,33 @@ function renderExternalPositions() {
     tr.lastElementChild.appendChild(select);
     tbody.appendChild(tr);
 
-    // === Card (mobile) ===
+    // === Card (mobile) — misma estructura que IOL: badge + descripción + valor + variación día + rendimiento + frasco ===
     const card = document.createElement('div');
     card.className = 'iol-position-card';
     const currentFrascoMobile = iolState.mapping[p.simbolo] || '';
     if (currentFrascoMobile) card.classList.add('frasco-' + currentFrascoMobile);
+
+    const monedaLabel = isUSD ? 'US$' : '$';
+    const descripcionCard = getInstrumentDescription(p);
     card.innerHTML = `
       <div class="card-top">
-        <div style="min-width:0; flex:1;">
-          <div class="card-symbol">${p.simbolo || ''}</div>
-          <div class="card-desc">${p.instrumento}</div>
+        <div style="min-width: 0; flex: 1;">
+          <div class="card-symbol">${p.simbolo || ''}<span class="card-pais">${p.moneda}</span></div>
+          <div class="card-desc">${descripcionCard}</div>
         </div>
         <div class="card-value-right">
           <div class="card-usd">${formatUSD(totalUSD)}</div>
-          <div class="card-orig">${isUSD ? 'USD' : '$'} ${fmtNum(total)}</div>
+          <div class="card-orig">${monedaLabel} ${fmtNum(total)}</div>
         </div>
       </div>
       <div class="card-meta">
         <div class="card-meta-item">
-          <span class="card-meta-label">Cantidad</span>
-          <span class="card-meta-value">${fmtNum(p.cantidad)}</span>
+          <span class="card-meta-label">Variación día</span>
+          <span class="card-meta-value ${varClass}">${varText}</span>
         </div>
         <div class="card-meta-item">
-          <span class="card-meta-label">Precio</span>
-          <span class="card-meta-value">${fmtNum(p.precio)}</span>
+          <span class="card-meta-label">Rendimiento</span>
+          <span class="card-meta-value ${renClass}">${renText}</span>
         </div>
         <div class="card-meta-item card-frasco"></div>
       </div>
@@ -4906,14 +5543,20 @@ function renderExternalPositions() {
     cardsEl.appendChild(card);
   });
 
-  // Total row: dejamos "Total" (moneda original) vacía porque mezcla monedas.
-  // Mostramos USD prominente con ARS abajo como subdato.
+  // Total row: mismo layout que IOL. Columnas: símbolo, descripción, país, cantidad,
+  // PPC, último, valorizado (todos vacíos vía colspan), USD ≈, Gan. %, frasco.
+  const totalGanPct = totalCostoUSD > 0 ? (totalGananciaUSD / totalCostoUSD) * 100 : 0;
+  const totalGanClass = totalGanPct >= 0 ? 'iol-positive' : 'iol-negative';
+  const ganPctText = (totalGanPct >= 0 ? '+' : '') + totalGanPct.toFixed(1) + '%';
+  const ganUsdText = (totalGananciaUSD >= 0 ? '+' : '') + formatUSD(totalGananciaUSD);
+  const hasGain = totalCostoUSD > 0;
   totalsRow.innerHTML = `
-    <td colspan="5" class="totals-label">TOTAL COCOS (al MEP $${formatNumberAR(mep)})</td>
+    <td colspan="7" class="totals-label">TOTAL COCOS (al MEP $${formatNumberAR(mep)})</td>
     <td class="grand-total">
       <strong>${formatUSD(grandTotalUSD)}</strong>
       <div style="font-weight: 500; font-size: 0.78em; color: #4b5563; margin-top: 2px;">${formatARS(grandTotalARS)}</div>
     </td>
+    <td class="${hasGain ? totalGanClass : ''}">${hasGain ? `<strong>${ganPctText}</strong><br><span style="font-size: 0.82em; font-weight: 500;">${ganUsdText}</span>` : '—'}</td>
     <td></td>
   `;
 }
@@ -4942,15 +5585,31 @@ function buildFrascoSelect(simbolo) {
   return select;
 }
 
-// Wire-up del CSV upload + botón limpiar
+// Wire-up del CSV upload. La fecha del snapshot se extrae del nombre del archivo.
+// Formato esperado: portfolio_report_YYYYMMDD.csv (ej: portfolio_report_20260530.csv).
+// Si el nombre no matchea, se usa hoy y avisamos con un toast.
+function extractDateFromCsvName(filename) {
+  const m = filename.match(/(\d{4})(\d{2})(\d{2})/);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  // Validación liviana: la Date constructor parsea YYYY-MM-DD como UTC.
+  // Para evitar problemas de TZ usamos un check directo de rangos.
+  const yi = parseInt(y), mi = parseInt(mo), di = parseInt(d);
+  if (mi < 1 || mi > 12 || di < 1 || di > 31) return null;
+  return `${y}-${mo}-${d}`;
+}
+
 document.getElementById('external-csv-upload').addEventListener('change', e => {
   const file = e.target.files[0];
-  if (file) importCocosCSV(file);
+  if (file) {
+    const dateFromName = extractDateFromCsvName(file.name);
+    const dateStr = dateFromName || new Date().toLocaleDateString('en-CA');
+    if (!dateFromName) {
+      showToast(`No pude detectar la fecha en "${file.name}". Uso la de hoy.`, 'error');
+    }
+    importCocosCSV(file, dateStr);
+  }
   e.target.value = '';
-});
-document.getElementById('external-clear-btn').addEventListener('click', () => {
-  const broker = document.getElementById('external-broker-select').value;
-  clearExternal(broker);
 });
 
 function renderIolDashboard() {
@@ -5359,6 +6018,12 @@ document.getElementById('iol-disconnect-btn').addEventListener('click', async ()
   } catch (err) {
     showToast('Error al desconectar: ' + err.message, 'error');
   }
+});
+
+// Botón "← Volver" del drill-down del doughnut
+document.getElementById('pie-drill-back')?.addEventListener('click', () => {
+  pieDrillExtras = false;
+  renderPieLastMonth();
 });
 
 // ECharts: resize global cuando cambia el tamaño de la ventana.
