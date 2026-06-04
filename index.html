@@ -2059,6 +2059,7 @@
       <button class="tab-btn" data-tab="calc">Calculadora</button>
       <button class="tab-btn" data-tab="historico">Histórico</button>
       <button class="tab-btn" data-tab="inversiones">Brokers</button>
+      <button class="tab-btn" data-tab="planreal">Plan vs Real</button>
     </nav>
 
     <!-- Tab: Gastos -->
@@ -2679,6 +2680,59 @@
 
       </div>
     </section>
+
+    <!-- ========== Tab: Plan vs Real ========== -->
+    <section id="tab-planreal" class="tab-content hidden">
+      <div class="info-box" style="margin-bottom:16px;">
+        Compara lo <strong>planificado</strong> (lo que registraste en el Histórico) contra el
+        <strong>valor real</strong> de tus frascos en los brokers (IOL + Cocos).
+        El "real" del mes es la <strong>variación de valor</strong> entre fin de mes anterior y fin de mes:
+        incluye tus aportes <em>y</em> el movimiento de mercado, no es solo el aporte.
+        El frasco de uso diario no se compara (es cash en pesos, no se invierte).
+      </div>
+
+      <div class="historico-summary" id="planreal-summary">
+        <div class="summary-card colchon">
+          <div class="label">Colchón</div>
+          <div class="value" id="pr-colchon-real">USD 0</div>
+          <div class="sub" id="pr-colchon-sub">Plan acum: USD 0</div>
+        </div>
+        <div class="summary-card casa">
+          <div class="label">Frasco Casa</div>
+          <div class="value" id="pr-casa-real">USD 0</div>
+          <div class="sub" id="pr-casa-sub">Plan acum: USD 0</div>
+        </div>
+        <div class="summary-card jubilacion">
+          <div class="label">Frasco Jubilación</div>
+          <div class="value" id="pr-jubilacion-real">USD 0</div>
+          <div class="sub" id="pr-jubilacion-sub">Plan acum: USD 0</div>
+        </div>
+      </div>
+
+      <div class="line-chart-wrapper">
+        <h3 style="color:#1e3a8a; margin-bottom:10px;">Plan acumulado vs valor real (USD)</h3>
+        <div id="planreal-chart" class="echarts-container" style="width:100%;height:340px;"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Detalle mes a mes</h3>
+        <div style="overflow-x: auto;">
+          <table class="historico-table" id="planreal-table">
+            <thead>
+              <tr>
+                <th>Mes</th><th>Frasco</th>
+                <th>Plan USD</th><th>Δ Valor real USD</th><th>Desvío (real−plan)</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="planreal-tbody"></tbody>
+          </table>
+        </div>
+        <div id="planreal-empty" class="info-box" style="margin-top: 12px; display:none;">
+          Todavía no hay meses registrados en el Histórico para comparar. Andá a la
+          <a href="#" id="goto-calc-pr">Calculadora</a> y registrá al menos un mes.
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -3091,6 +3145,7 @@ function showTab(tabName) {
     });
   }
   if (tabName === 'inversiones') loadAndRenderIol();
+  if (tabName === 'planreal') loadAndRenderPlanVsReal();
   // Después de pintar el tab, redimensionar los charts que pudieron haberse inicializado en oculto
   requestAnimationFrame(resizeAllCharts);
 }
@@ -3100,6 +3155,11 @@ document.querySelectorAll('.tab-btn').forEach(b => {
 });
 
 document.getElementById('goto-calc').addEventListener('click', e => {
+  e.preventDefault();
+  showTab('calc');
+});
+
+document.getElementById('goto-calc-pr').addEventListener('click', e => {
   e.preventDefault();
   showTab('calc');
 });
@@ -4906,11 +4966,162 @@ function renderLineChart(rows) {
 }
 
 /* =====================================================
+   PLAN VS REAL — render
+   ===================================================== */
+async function loadAndRenderPlanVsReal() {
+  try {
+    const [historicoRows, iolRows, cocosRows, mapping, cfg] = await Promise.all([
+      fetchHistorico(),
+      fetchAllIolSnapshots(),
+      fetchAllCocosSnapshots(),
+      fetchIolMapping(),
+      fetchUserConfig()
+    ]);
+    const defaultMep = (cfg?.default_mep) || 1500;
+    const months = buildPlanVsReal(historicoRows, iolRows, cocosRows, mapping, defaultMep);
+    renderPlanVsRealSummary(months);
+    renderPlanVsRealTable(months);
+    renderPlanVsRealChart(months);
+  } catch (err) {
+    console.error(err);
+    showToast('Error cargando Plan vs Real: ' + err.message, 'error');
+  }
+}
+
+// Cards: valor real actual por frasco (último mes) + plan acumulado y desvío.
+function renderPlanVsRealSummary(months) {
+  const FR = [['colchon', 'pr-colchon'], ['casa', 'pr-casa'], ['jubilacion', 'pr-jubilacion']];
+  const last = months.length ? months[months.length - 1] : null;
+  for (const [key, idBase] of FR) {
+    const realEl = document.getElementById(idBase + '-real');
+    const subEl = document.getElementById(idBase + '-sub');
+    if (!realEl || !subEl) continue;
+    if (!last) { realEl.textContent = 'USD 0'; subEl.textContent = 'Plan acum: USD 0'; continue; }
+    const f = last.frascos[key];
+    realEl.textContent = f.realValor === null ? 'Sin dato' : formatUSD(f.realValor);
+    let sub = 'Plan acum: ' + formatUSD(f.planAcum || 0);
+    if (f.realValor !== null) {
+      const dif = f.realValor - (f.planAcum || 0);
+      sub += ` · ${dif >= 0 ? '+' : '−'}${formatUSD(Math.abs(dif))} vs plan`;
+    }
+    subEl.textContent = sub;
+  }
+}
+
+// Tabla mes × frasco: plan del mes, Δ valor real, desvío y estado.
+function renderPlanVsRealTable(months) {
+  const tbody = document.getElementById('planreal-tbody');
+  const empty = document.getElementById('planreal-empty');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (months.length === 0) { if (empty) empty.style.display = 'block'; return; }
+  if (empty) empty.style.display = 'none';
+
+  const FR = [['colchon', 'Colchón'], ['casa', 'Frasco Casa'], ['jubilacion', 'Frasco Jubilación']];
+  for (const m of months) {
+    FR.forEach(([key, label], i) => {
+      const f = m.frascos[key];
+      const tr = document.createElement('tr');
+      const mesCell = i === 0
+        ? `<td rowspan="3"><strong>${MESES_CORTOS[m.monthIdx]} ${String(m.year).slice(-2)}</strong></td>`
+        : '';
+      let realTxt, desvTxt, desvColor, estadoTxt, estadoColor;
+      if (f.sinDato) {
+        realTxt = '—'; desvTxt = '—'; desvColor = '#9ca3af';
+        estadoTxt = 'Sin dato'; estadoColor = '#9ca3af';
+      } else {
+        realTxt = formatUSD(f.real);
+        desvTxt = `${f.desvio >= 0 ? '+' : '−'}${formatUSD(Math.abs(f.desvio))}`;
+        desvColor = f.desvio >= 0 ? '#047857' : '#b91c1c';
+        // OK si el real alcanza el plan o queda dentro de una tolerancia chica (±10% del plan).
+        const okBand = Math.abs(f.desvio) <= Math.max(f.plan * 0.1, 5);
+        if (f.desvio >= 0 || okBand) { estadoTxt = 'OK'; estadoColor = '#10b981'; }
+        else { estadoTxt = 'Por debajo'; estadoColor = '#ef4444'; }
+      }
+      tr.innerHTML = `${mesCell}<td>${label}</td><td>${formatUSD(f.plan)}</td><td>${realTxt}</td>` +
+        `<td style="color:${desvColor};">${desvTxt}</td>` +
+        `<td><span style="color:${estadoColor};font-weight:600;">${estadoTxt}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// Gráfico: plan acumulado (línea punteada) vs valor real (línea sólida) por frasco.
+function renderPlanVsRealChart(months) {
+  const chart = getChart('planreal-chart');
+  if (!chart) return;
+  if (months.length === 0) {
+    chart.setOption({
+      graphic: [{
+        type: 'text', left: 'center', top: 'middle',
+        style: { text: 'Sin datos todavía', fontSize: 14, fill: '#9ca3af', fontFamily: 'inherit' }
+      }],
+      xAxis: { show: false }, yAxis: { show: false }, series: []
+    }, true);
+    return;
+  }
+
+  const labels = months.map(m => MESES_CORTOS[m.monthIdx] + ' ' + String(m.year).slice(-2));
+  const planAcum = key => months.map(m => +(m.frascos[key].planAcum || 0).toFixed(2));
+  const realValor = key => months.map(m => m.frascos[key].realValor === null ? null : +m.frascos[key].realValor.toFixed(2));
+
+  const FR = [
+    { key: 'colchon', label: 'Colchón', color: '#f59e0b' },
+    { key: 'casa', label: 'Frasco Casa', color: '#10b981' },
+    { key: 'jubilacion', label: 'Frasco Jubilación', color: '#8b5cf6' }
+  ];
+  const series = [];
+  for (const fr of FR) {
+    series.push({
+      name: fr.label + ' (plan)', type: 'line', data: planAcum(fr.key),
+      smooth: true, showSymbol: true, symbolSize: 5,
+      lineStyle: { width: 2, type: 'dashed', color: fr.color }, itemStyle: { color: fr.color }
+    });
+    series.push({
+      name: fr.label + ' (real)', type: 'line', data: realValor(fr.key),
+      smooth: true, showSymbol: true, symbolSize: 6, connectNulls: false,
+      lineStyle: { width: 3, color: fr.color }, itemStyle: { color: fr.color }
+    });
+  }
+
+  chart.setOption({
+    legend: {
+      data: series.map(s => s.name), bottom: 0, itemWidth: 14, itemHeight: 8,
+      textStyle: { color: '#374151', fontSize: 11, fontFamily: 'inherit' }
+    },
+    grid: { left: 60, right: 24, top: 24, bottom: 60 },
+    xAxis: {
+      type: 'category', data: labels,
+      axisLine: { lineStyle: { color: '#cbd5e1' } }, axisTick: { show: false },
+      axisLabel: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' }
+    },
+    yAxis: {
+      type: 'value', axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11, fontFamily: 'inherit', formatter: v => formatUSDCompact(v) },
+      splitLine: { lineStyle: { color: '#f1f5f9' } }
+    },
+    tooltip: {
+      ...CHART_TOOLTIP,
+      trigger: 'axis',
+      formatter: params => {
+        const m = months[params[0].dataIndex];
+        return `<strong>${m.mes} ${m.year}</strong><br/>` +
+          params.map(p => {
+            const val = (p.value === null || p.value === undefined) ? 'sin dato' : formatUSD(p.value);
+            return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${val}`;
+          }).join('<br/>');
+      }
+    },
+    series
+  }, true);
+}
+
+/* =====================================================
    INIT
    ===================================================== */
 // Aplica restricciones de UI según el rol del usuario
 function applyRolePermissions(role) {
-  const restricted = ['calc', 'historico', 'inversiones'];
+  const restricted = ['calc', 'historico', 'inversiones', 'planreal'];
   if (role === 'gastos_only') {
     restricted.forEach(tab => {
       const btn = document.querySelector(`[data-tab="${tab}"]`);
@@ -5451,6 +5662,110 @@ async function clearExternal(broker) {
 function isCashPosition(p) {
   return (p.simbolo === 'ARS' || p.simbolo === 'USD' || p.instrumento === 'ARS' || p.instrumento === 'USD')
     && parseFloat(p.precio) === 1;
+}
+
+/* =====================================================
+   PLAN VS REAL (Fase 2)
+   Cruza el plan (historico_ahorro) con la variación real de valor por frasco,
+   tomada como delta del valorizado entre snapshots de fin de mes (IOL + Cocos).
+   "Real" = variación de valor (incluye mercado), NO aporte puro.
+   ===================================================== */
+
+// Trae todos los snapshots de posiciones IOL (volumen chico → se agrupa en cliente).
+async function fetchAllIolSnapshots() {
+  if (!currentUser) return [];
+  const { data, error } = await sb
+    .from('iol_positions')
+    .select('snapshot_at, simbolo, moneda, valorizado')
+    .eq('user_id', currentUser.id);
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+// Trae todos los snapshots de posiciones Cocos.
+async function fetchAllCocosSnapshots() {
+  if (!currentUser) return [];
+  const { data, error } = await sb
+    .from('external_positions')
+    .select('snapshot_date, simbolo, instrumento, moneda, total, precio')
+    .eq('user_id', currentUser.id)
+    .eq('broker', 'cocos');
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+// 'YYYY-MM-01' del mes indicado por (year, monthIdx). monthIdx puede ser 12 (→ enero del año siguiente).
+function firstOfMonthStr(year, monthIdx) {
+  const y = year + Math.floor(monthIdx / 12);
+  const m = ((monthIdx % 12) + 12) % 12;
+  return `${y}-${String(m + 1).padStart(2, '0')}-01`;
+}
+
+// Posiciones IOL del snapshot más reciente estrictamente anterior a cutMs (corte = 1° del mes siguiente).
+function pickIolBefore(rows, cutMs) {
+  let best = null;
+  for (const r of rows) {
+    const t = new Date(r.snapshot_at).getTime();
+    if (t < cutMs && (best === null || t > best)) best = t;
+  }
+  if (best === null) return [];
+  return rows.filter(r => new Date(r.snapshot_at).getTime() === best);
+}
+
+// Posiciones Cocos del snapshot_date más reciente estrictamente anterior a cutStr ('YYYY-MM-01').
+function pickCocosBefore(rows, cutStr) {
+  let best = null;
+  for (const r of rows) {
+    const d = r.snapshot_date;
+    if (d < cutStr && (best === null || d > best)) best = d;
+  }
+  if (best === null) return [];
+  return rows.filter(r => r.snapshot_date === best);
+}
+
+// Arma, por cada mes registrado en el plan, el cruce plan vs real por frasco.
+// Real del mes = valor a fin de mes − valor a fin de mes anterior (delta del valorizado).
+// Si falta snapshot en algún borde, el mes queda "sin dato" (no se inventa 0).
+function buildPlanVsReal(historicoRows, iolRows, cocosRows, mapping, defaultMep) {
+  const FRASCOS = ['colchon', 'casa', 'jubilacion'];
+  const acc = { colchon: 0, casa: 0, jubilacion: 0 }; // plan acumulado (suma de aportes planificados)
+
+  return historicoRows.map(r => {
+    const monthIdx = MESES.indexOf(r.mes);
+    const mep = parseFloat(r.mep) || defaultMep;
+    const endCutMs = new Date(r.year, monthIdx + 1, 1).getTime();
+    const prevCutMs = new Date(r.year, monthIdx, 1).getTime();
+    const endCutStr = firstOfMonthStr(r.year, monthIdx + 1);
+    const prevCutStr = firstOfMonthStr(r.year, monthIdx);
+
+    const iolEnd = pickIolBefore(iolRows, endCutMs);
+    const cocosEnd = pickCocosBefore(cocosRows, endCutStr);
+    const iolPrev = pickIolBefore(iolRows, prevCutMs);
+    const cocosPrev = pickCocosBefore(cocosRows, prevCutStr);
+
+    const hasEnd = iolEnd.length > 0 || cocosEnd.length > 0;
+    const hasPrev = iolPrev.length > 0 || cocosPrev.length > 0;
+
+    const valEnd = frascoUsdSums(iolEnd, cocosEnd, mapping, mep).sums;
+    const valPrev = frascoUsdSums(iolPrev, cocosPrev, mapping, mep).sums;
+
+    const frascos = {};
+    for (const f of FRASCOS) {
+      const plan = parseFloat(r[f + '_usd']) || 0;
+      acc[f] += plan;
+      const sinDato = !hasEnd || !hasPrev;
+      const real = sinDato ? null : (valEnd[f] || 0) - (valPrev[f] || 0);
+      frascos[f] = {
+        plan,
+        real,                                   // Δ valor del mes (incluye mercado)
+        desvio: sinDato ? null : real - plan,
+        sinDato,
+        planAcum: acc[f],                        // plan acumulado (suma de aportes)
+        realValor: hasEnd ? (valEnd[f] || 0) : null  // valor real invertido a fin de mes
+      };
+    }
+    return { year: r.year, mes: r.mes, monthIdx, mep, frascos };
+  });
 }
 
 // Capitaliza nombres de instrumentos:
@@ -6095,28 +6410,37 @@ function renderIolBalances() {
   `;
 }
 
-function renderIolFrascoSummary() {
-  const mep = iolState.mepRate || 1500;
+// Suma el valorizado en USD por frasco cruzando posiciones IOL + externas (Cocos).
+// El frasco se resuelve por símbolo con el mapping compartido; cash y símbolos sin
+// mapear caen en 'libre'. Devuelve sums y counts por frasco (incluido 'libre').
+// Es el núcleo reutilizable tanto del resumen del tab Brokers como del Plan vs Real.
+function frascoUsdSums(iolPositions, externalPositions, mapping, mep) {
   const sums = { colchon: 0, casa: 0, jubilacion: 0, libre: 0 };
   const counts = { colchon: 0, casa: 0, jubilacion: 0, libre: 0 };
   // Posiciones IOL
-  for (const p of iolState.positions) {
+  for (const p of (iolPositions || [])) {
     const val = parseFloat(p.valorizado) || 0;
     const valUsd = p.moneda === 'dolar_Estadounidense' ? val : val / mep;
-    const frasco = iolState.mapping[p.simbolo] || 'libre';
+    const frasco = mapping[p.simbolo] || 'libre';
     sums[frasco] = (sums[frasco] || 0) + valUsd;
     counts[frasco] = (counts[frasco] || 0) + 1;
   }
-  // Posiciones externas (Cocos, etc.) — usan el mismo mapping por símbolo
-  // Excluyo cash (ARS/USD disponible) porque no es un instrumento
-  for (const p of (iolState.external || [])) {
+  // Posiciones externas (Cocos, etc.) — usan el mismo mapping por símbolo.
+  // Excluyo cash (ARS/USD disponible) porque no es un instrumento.
+  for (const p of (externalPositions || [])) {
     if (isCashPosition(p)) continue;
     const total = parseFloat(p.total) || 0;
     const valUsd = p.moneda === 'USD' ? total : total / mep;
-    const frasco = iolState.mapping[p.simbolo] || 'libre';
+    const frasco = mapping[p.simbolo] || 'libre';
     sums[frasco] = (sums[frasco] || 0) + valUsd;
     counts[frasco] = (counts[frasco] || 0) + 1;
   }
+  return { sums, counts };
+}
+
+function renderIolFrascoSummary() {
+  const mep = iolState.mepRate || 1500;
+  const { sums, counts } = frascoUsdSums(iolState.positions, iolState.external, iolState.mapping, mep);
   const setText = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
