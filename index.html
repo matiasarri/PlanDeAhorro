@@ -173,30 +173,25 @@
     flex-wrap: wrap;
   }
   .user-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: rgba(255,255,255,0.15);
     padding: 6px 14px;
     border-radius: 14px;
     font-size: 0.85em;
   }
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 14px;
-    font-size: 0.8em;
-    background: rgba(255,255,255,0.15);
-  }
+  /* Punto de estado: neutro (gris) por defecto, coloreado según estado. */
   .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #9ca3af;
+    background: #9ca3af;        /* neutro / inicialización */
+    flex-shrink: 0;
   }
-  .status-pill.connected .status-dot { background: #10b981; }
-  .status-pill.saving .status-dot { background: #f59e0b; animation: pulse 1s infinite; }
-  .status-pill.saved .status-dot { background: #10b981; }
-  .status-pill.error .status-dot { background: #ef4444; }
+  .status-dot.ok { background: #10b981; }
+  .status-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
+  .status-dot.error { background: #ef4444; }
   @keyframes pulse { 50% { opacity: 0.4; } }
   .btn-ghost {
     background: transparent;
@@ -1848,7 +1843,6 @@
     .topbar { padding: 10px 14px; gap: 8px; }
     .topbar h1 { font-size: 1em; }
     .user-pill { font-size: 0.72em; padding: 3px 8px; }
-    .status-pill { font-size: 0.7em; padding: 3px 8px; }
     .btn-ghost { font-size: 0.78em; padding: 4px 10px; }
 
     /* Tabs */
@@ -2045,10 +2039,13 @@
     <header class="topbar">
       <h1>Plan Cloud</h1>
       <div class="top-right">
-        <span id="user-email" class="user-pill"></span>
-        <span id="status-pill" class="status-pill connected">
-          <span class="status-dot"></span>
-          <span id="status-text">Sincronizado</span>
+        <span class="user-pill">
+          <span id="user-status-dot" class="status-dot" title="Listo"></span>
+          <span id="user-email"></span>
+        </span>
+        <span id="mep-pill" class="user-pill" style="cursor:pointer;" title="Dólar MEP (ArgentinaDatos). Click para actualizar.">
+          <span id="mep-status-dot" class="status-dot" title="Listo"></span>
+          <span id="mep-text">MEP —</span>
         </span>
         <button id="signout-btn" class="btn-ghost">Cerrar sesión</button>
       </div>
@@ -2229,10 +2226,6 @@
             </div>
           </div>
 
-          <div class="calc-field">
-            <label for="mep">Cotización dólar MEP (ARS / USD)</label>
-            <input type="text" inputmode="decimal" id="mep" value="1.500">
-          </div>
 
           <div class="calc-field">
             <label for="reserva-diaria">Reserva uso diario (ARS)</label>
@@ -2835,10 +2828,15 @@ function showToast(msg, type = '') {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
+// Estado de sincronización de gastos/histórico → punto en el pill del usuario.
+// state: 'saving' (ámbar) | 'saved' (verde) | 'error' (rojo). Sin clase = neutro (gris).
+// El texto es el tooltip del punto ("Sincronizado", "Guardando…", "Cargando…", "Error").
 function setStatus(state, text) {
-  const pill = document.getElementById('status-pill');
-  pill.className = 'status-pill ' + state;
-  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('user-status-dot');
+  if (!dot) return;
+  const cls = state === 'saving' ? 'saving' : state === 'error' ? 'error' : state === 'saved' ? 'ok' : '';
+  dot.className = 'status-dot' + (cls ? ' ' + cls : '');
+  dot.title = text || 'Listo';
 }
 
 function showLoader(show) {
@@ -2868,6 +2866,7 @@ let currentYear = null;
 let gastosCache = [];      // gastos del año actual (cache local)
 let historicoCache = [];   // todos los registros del histórico
 let deducciones = [];      // gastos de la calculadora — { desc, monto, gasto_id? }
+let currentMep = 1500;     // MEP global en vivo (ArgentinaDatos). Única fuente para calc + Brokers + Plan vs Real.
 // Reserva uso diario: por defecto se propone el 50% del excedente.
 // Cuando el user toca el input, pasa a manual y respeta su valor hasta cambiar de mes.
 let reservaDiariaAuto = true;
@@ -4169,7 +4168,7 @@ document.querySelectorAll('.calc-row[data-frasco]').forEach(row => {
 function calcular() {
   const ingreso = parseARS(document.getElementById('ingreso').value);
   const gastos = deducciones.reduce((s, d) => s + (d.monto || 0), 0);
-  const mep = parseARS(document.getElementById('mep').value) || 1;
+  const mep = currentMep || 1;
   const fase = document.querySelector('input[name="fase"]:checked').value;
 
   document.getElementById('gastos-total').textContent = formatARS(gastos);
@@ -4457,14 +4456,13 @@ async function loadCalcMonth(year, mesNombre) {
         gasto_id: g.id
       }));
 
-    // 2. Buscar registro del histórico para precargar ingreso/mep/fase/diario
+    // 2. Buscar registro del histórico para precargar ingreso/fase/diario.
+    // El MEP ya no se precarga: es un valor global en vivo (header). El histórico
+    // conserva el MEP con que se registró cada mes (no se toca al revisar).
     const hist = await fetchHistoricoMes(year, mesNombre);
     if (hist) {
       if (hist.ingreso_ars > 0) {
         document.getElementById('ingreso').value = formatNumberAR(hist.ingreso_ars);
-      }
-      if (hist.mep > 0) {
-        document.getElementById('mep').value = formatNumberAR(hist.mep);
       }
       const faseInput = document.querySelector(`input[name="fase"][value="${hist.fase}"]`);
       if (faseInput) { faseInput.checked = true; actualizarRadios(); }
@@ -4618,7 +4616,7 @@ async function deleteDeduccionDePlanilla(gastoId) {
 document.getElementById('registrar-historico-btn').addEventListener('click', async () => {
   const ingreso = parseARS(document.getElementById('ingreso').value);
   const gastos = deducciones.reduce((s, d) => s + (d.monto || 0), 0);
-  const mep = parseARS(document.getElementById('mep').value) || 1;
+  const mep = currentMep || 1;
   const fase = parseInt(document.querySelector('input[name="fase"]:checked').value);
   const excedente = ingreso - gastos;
 
@@ -4682,7 +4680,7 @@ document.querySelectorAll('input[name="fase"]').forEach(el => {
   el.addEventListener('change', () => { actualizarRadios(); calcular(); });
 });
 
-['ingreso', 'mep'].forEach(id => {
+['ingreso'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('input', calcular);
   el.addEventListener('blur', () => {
@@ -4701,6 +4699,109 @@ document.getElementById('reserva-diaria').addEventListener('input', () => {
 document.getElementById('reserva-diaria').addEventListener('blur', e => {
   const n = parseARS(e.target.value);
   e.target.value = n > 0 ? formatNumberAR(n) : '';
+});
+
+/* =====================================================
+   MEP EN VIVO — ArgentinaDatos (api.argentinadatos.com)
+   Fuente pública de cotizaciones. Acá usamos el dólar MEP (casa "bolsa").
+   Deja preparada la base para sumar inflación más adelante.
+   ===================================================== */
+const ARG_DATOS = {
+  base: 'https://api.argentinadatos.com/v1',
+  // Último MEP (casa "bolsa"). El endpoint devuelve el histórico ascendente:
+  // el último elemento es el valor vigente. Timeout para no colgar el login.
+  async getMep() {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    try {
+      const res = await fetch(`${this.base}/cotizaciones/dolares/bolsa`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`ArgentinaDatos HTTP ${res.status}`);
+      const arr = await res.json();
+      if (!Array.isArray(arr) || arr.length === 0) throw new Error('Respuesta MEP vacía');
+      const last = arr[arr.length - 1];
+      const valor = parseFloat(last.venta) || parseFloat(last.compra) || 0;
+      if (!valor) throw new Error('MEP sin valor numérico');
+      return { valor, fecha: last.fecha };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  // Futuro: async getInflacion() → `${this.base}/finanzas/indices/inflacion`
+};
+
+const MEP_CACHE_KEY = 'mep_cache';
+const MEP_CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+function readMepCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(MEP_CACHE_KEY));
+    if (!c || typeof c.valor !== 'number' || !c.fetchedAt) return null;
+    return c;
+  } catch { return null; }
+}
+function writeMepCache(valor, fecha) {
+  try { localStorage.setItem(MEP_CACHE_KEY, JSON.stringify({ valor, fecha, fetchedAt: Date.now() })); } catch {}
+}
+
+// Trae el MEP vivo respetando un cache de 5 min. force=true ignora el cache.
+async function fetchMepVivo(force = false) {
+  const cached = readMepCache();
+  if (!force && cached && (Date.now() - cached.fetchedAt) < MEP_CACHE_TTL) {
+    return { valor: cached.valor, fecha: cached.fecha, fromCache: true };
+  }
+  const { valor, fecha } = await ARG_DATOS.getMep();
+  writeMepCache(valor, fecha);
+  return { valor, fecha, fromCache: false };
+}
+
+// Pinta el valor del chip global del MEP en el header (sin tocar el punto de estado).
+function renderMepPill(valor, fecha) {
+  const text = document.getElementById('mep-text');
+  const pill = document.getElementById('mep-pill');
+  if (text) text.textContent = 'MEP $' + formatNumberAR(valor);
+  if (pill) pill.title = (fecha ? `Dólar MEP (ArgentinaDatos) al ${fecha}.` : 'Dólar MEP (ArgentinaDatos).') + ' Click para actualizar.';
+}
+
+// Estado de sincronización del MEP → punto en el chip del MEP (tooltip = estado).
+function setMepDot(state, tip) {
+  const dot = document.getElementById('mep-status-dot');
+  if (!dot) return;
+  dot.className = 'status-dot' + (state ? ' ' + state : '');
+  dot.title = tip || 'Listo';
+}
+
+// Trae el MEP vivo y lo propaga a TODA la app: variable global currentMep, chip del
+// header, iolState.mepRate (Brokers/Plan vs Real), recálculo de la calculadora y persistencia.
+let mepRefreshing = false;
+async function actualizarMepVivo({ silent = false, force = false } = {}) {
+  if (mepRefreshing) return;
+  mepRefreshing = true;
+  setMepDot('saving', 'Cargando…');
+  try {
+    const { valor, fecha } = await fetchMepVivo(force);
+    currentMep = valor;
+    iolState.mepRate = valor;                // mismo MEP en Brokers / Plan vs Real
+    renderMepPill(valor, fecha);
+    setMepDot('ok', 'Sincronizado');
+    upsertUserConfig({ default_mep: valor }); // no-op si no hay sesión
+    calcular();                              // refresca los frascos con el MEP nuevo
+    if (!silent) showToast('MEP actualizado: ' + formatNumberAR(valor) + ' · al ' + fecha, 'success');
+  } catch (err) {
+    console.error('MEP vivo:', err);
+    setMepDot('error', 'Error');
+    if (!silent) showToast('No se pudo traer el MEP: ' + err.message, 'error');
+  } finally {
+    mepRefreshing = false;
+  }
+}
+
+// Click en el chip → forzar actualización.
+document.getElementById('mep-pill')?.addEventListener('click', () => actualizarMepVivo({ force: true }));
+
+// Auto-refresh liviano: cada 10 min y al volver el foco a la pestaña (cache-aware, no machaca la API).
+setInterval(() => { if (currentUser) actualizarMepVivo({ silent: true }); }, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentUser) actualizarMepVivo({ silent: true });
 });
 
 /* =====================================================
@@ -4977,7 +5078,7 @@ async function loadAndRenderPlanVsReal() {
       fetchIolMapping(),
       fetchUserConfig()
     ]);
-    const defaultMep = (cfg?.default_mep) || 1500;
+    const defaultMep = currentMep || (cfg?.default_mep) || 1500;
     const months = buildPlanVsReal(historicoRows, iolRows, cocosRows, mapping, defaultMep);
     renderPlanVsRealSummary(months);
     renderPlanVsRealTable(months);
@@ -5148,9 +5249,17 @@ async function initApp() {
     const cfg = await fetchUserConfig();
     if (cfg) {
       if (cfg.default_ingreso) document.getElementById('ingreso').value = formatNumberAR(cfg.default_ingreso);
-      if (cfg.default_mep) document.getElementById('mep').value = formatNumberAR(cfg.default_mep);
+      // MEP: ya no es un campo de la calc; es global. Sembramos con el último guardado
+      // para mostrar algo de entrada; el update en vivo (abajo) lo pisa si responde.
+      if (cfg.default_mep) currentMep = cfg.default_mep;
       // reserva_diaria_ars: ya no se carga, ahora se propone como 50% del excedente.
     }
+    renderMepPill(currentMep, null);
+    // MEP en vivo: arrancar con cotización fresca (silencioso, cache-aware, con timeout).
+    // Va antes de setCalcMonth para que, si el mes actual ya está en histórico, su MEP
+    // registrado tenga prioridad sobre el vivo.
+    await actualizarMepVivo({ silent: true });
+
     // Aplicar permisos de rol (gastos_only por defecto si no hay config — más seguro)
     applyRolePermissions(cfg?.role || 'gastos_only');
 
@@ -5414,13 +5523,13 @@ async function loadAndRenderIol() {
     ]);
     // Total USD del snapshot inmediatamente anterior al actual (para pastilla "variación día")
     const iolPrevTotalUSD = portfolio.connected && portfolio.snapshot_at
-      ? await fetchIolPreviousTotalUSD(portfolio.snapshot_at, (cfg?.default_mep) || 1500)
+      ? await fetchIolPreviousTotalUSD(portfolio.snapshot_at, currentMep || (cfg?.default_mep) || 1500)
       : null;
     iolState = {
       ...iolState,
       ...portfolio,
       mapping,
-      mepRate: (cfg?.default_mep) || 1500,
+      mepRate: currentMep || (cfg?.default_mep) || 1500,
       external: externalPositions,
       externalHistory,
       iolPrevTotalUSD
