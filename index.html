@@ -3143,7 +3143,7 @@ function showTab(tabName) {
       }
     });
   }
-  if (tabName === 'inversiones') loadAndRenderIol();
+  if (tabName === 'inversiones') syncAndRenderIol();
   if (tabName === 'planreal') loadAndRenderPlanVsReal();
   // Después de pintar el tab, redimensionar los charts que pudieron haberse inicializado en oculto
   requestAnimationFrame(resizeAllCharts);
@@ -3531,6 +3531,12 @@ function renderTotalsRow() {
 function scrollToLastMonthWithData() {
   const wrapper = document.querySelector('.gastos-table-wrapper');
   if (!wrapper) return;
+  // En mobile mostramos solo el mes activo y sin columna de acciones: dejamos la grilla
+  // alineada a la izquierda (concepto + mes visibles), sin scrollear al último mes.
+  if (window.matchMedia('(max-width: 700px)').matches) {
+    wrapper.scrollLeft = 0;
+    return;
+  }
   const totalsMes = MESES_LOWER.map(m => colSum(m));
   let lastIdx = -1;
   for (let i = totalsMes.length - 1; i >= 0; i--) {
@@ -5357,7 +5363,11 @@ function selectBroker(broker) {
 
 // Listeners de los botones del sidebar
 document.querySelectorAll('.broker-item').forEach(btn => {
-  btn.addEventListener('click', () => selectBroker(btn.dataset.broker));
+  btn.addEventListener('click', () => {
+    const broker = btn.dataset.broker;
+    selectBroker(broker);                       // cambia la vista al toque
+    if (broker === 'iol') syncAndRenderIol({ showLoading: false }); // y resincroniza con IOL
+  });
 });
 
 function renderBrokerSidebar() {
@@ -5511,8 +5521,34 @@ async function fetchIolPreviousTotalUSD(currentSnapshotAt, mep) {
   return { snapshotAt: prevAt, totalUsd: total };
 }
 
-async function loadAndRenderIol() {
-  showIolView('loading');
+// Sincroniza con IOL al abrir Brokers o al seleccionar el broker IOL.
+// Muestra primero el último snapshot (rápido) y sincroniza en segundo plano.
+// Throttle corto para no machacar la API de IOL en clicks/tab-flips seguidos
+// (el botón "Refrescar" es force = ignora el throttle).
+let lastIolSyncAt = 0;
+const IOL_SYNC_THROTTLE = 60 * 1000; // 60s
+
+async function syncAndRenderIol({ force = false, showLoading = true } = {}) {
+  await loadAndRenderIol({ showLoading });
+  if (!iolState.connected) return;                                  // sin IOL conectado: nada que sincronizar
+  if (!force && (Date.now() - lastIolSyncAt) < IOL_SYNC_THROTTLE) return;
+  const btn = document.getElementById('iol-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
+  try {
+    await callIolProxy('sync_portfolio');
+    lastIolSyncAt = Date.now();
+    await loadAndRenderIol({ showLoading: false });                 // re-render sin flash
+  } catch (err) {
+    iolState.last_sync_error = err.message;
+    renderIolDashboard();
+    showToast('No se pudo sincronizar con IOL: ' + err.message + ' (mostrando último snapshot)', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  }
+}
+
+async function loadAndRenderIol({ showLoading = true } = {}) {
+  if (showLoading) showIolView('loading');
   try {
     const [portfolio, mapping, cfg, externalPositions, externalHistory] = await Promise.all([
       fetchLatestPortfolioDirect(),
@@ -6603,6 +6639,7 @@ document.getElementById('iol-refresh-btn').addEventListener('click', async () =>
   btn.textContent = 'Refrescando...';
   try {
     await callIolProxy('sync_portfolio');
+    lastIolSyncAt = Date.now();
     showToast('Portafolio actualizado', 'success');
     await loadAndRenderIol();
   } catch (err) {
