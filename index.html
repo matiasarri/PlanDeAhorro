@@ -2055,6 +2055,7 @@
       <button class="tab-btn active" data-tab="gastos">Gastos</button>
       <button class="tab-btn" data-tab="calc">Calculadora</button>
       <button class="tab-btn" data-tab="historico">Histórico</button>
+      <button class="tab-btn" data-tab="sueldo">Sueldo</button>
       <button class="tab-btn" data-tab="inversiones">Brokers</button>
       <button class="tab-btn" data-tab="planreal">Plan vs Real</button>
     </nav>
@@ -2372,6 +2373,36 @@
           Todavía no registraste ningún mes. Andá a la <a href="#" id="goto-calc">Calculadora</a>,
           completá los parámetros y apretá "Registrar este mes en histórico".
         </div>
+      </div>
+    </section>
+
+    <!-- ========== Tab: Sueldo ========== -->
+    <section id="tab-sueldo" class="tab-content hidden">
+      <div class="panel">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+          <h3 style="margin:0;">Sueldo mensual</h3>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="sueldo-year" style="font-size:0.85em; color:#6b7280;">Año</label>
+            <select id="sueldo-year" class="cell-input" style="width:auto;"></select>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="historico-table" id="sueldo-table">
+            <thead>
+              <tr><th>Mes</th><th>Sueldo (ARS)</th><th>MEP prom.</th><th>Sueldo USD</th></tr>
+            </thead>
+            <tbody id="sueldo-tbody"></tbody>
+          </table>
+        </div>
+        <small style="color:#6b7280; display:block; margin-top:8px;">
+          El sueldo en USD usa el MEP promedio del mes (ArgentinaDatos). La Calculadora toma el sueldo de acá.
+        </small>
+      </div>
+
+      <div class="line-chart-wrapper">
+        <h3 style="color:#1e3a8a; margin-bottom:10px;">Sueldo vs inflación</h3>
+        <div id="inflacion-resumen" style="margin-bottom:8px; font-size:0.9em;"></div>
+        <div id="inflacion-chart" class="echarts-container" style="width:100%;height:320px;"></div>
       </div>
     </section>
 
@@ -3099,6 +3130,29 @@ async function fetchUserConfig() {
   return data;
 }
 
+// Sueldos: fuente de verdad del ingreso mensual (separado del snapshot del plan).
+async function fetchSueldos(year) {
+  if (!currentUser) return [];
+  const { data, error } = await sb.from('sueldos').select('*').eq('user_id', currentUser.id).eq('year', year);
+  if (error) { console.error(error); return []; }
+  return (data || []).sort((a, b) => MESES.indexOf(a.mes) - MESES.indexOf(b.mes));
+}
+
+async function fetchSueldoMes(year, mes) {
+  if (!currentUser) return null;
+  const { data } = await sb.from('sueldos').select('sueldo_ars')
+    .eq('user_id', currentUser.id).eq('year', year).eq('mes', mes).maybeSingle();
+  return data;
+}
+
+async function upsertSueldo(year, mes, sueldoArs) {
+  if (!currentUser) return;
+  const { error } = await sb.from('sueldos').upsert({
+    user_id: currentUser.id, year, mes, sueldo_ars: sueldoArs
+  });
+  if (error) console.error(error);
+}
+
 async function upsertUserConfig(fields) {
   if (!currentUser) return;
   const { error } = await sb.from('user_config').upsert({ user_id: currentUser.id, ...fields });
@@ -3145,6 +3199,7 @@ function showTab(tabName) {
   }
   if (tabName === 'inversiones') syncAndRenderIol();
   if (tabName === 'planreal') loadAndRenderPlanVsReal();
+  if (tabName === 'sueldo') loadAndRenderSueldos();
   // Después de pintar el tab, redimensionar los charts que pudieron haberse inicializado en oculto
   requestAnimationFrame(resizeAllCharts);
 }
@@ -4462,14 +4517,13 @@ async function loadCalcMonth(year, mesNombre) {
         gasto_id: g.id
       }));
 
-    // 2. Buscar registro del histórico para precargar ingreso/fase/diario.
-    // El MEP ya no se precarga: es un valor global en vivo (header). El histórico
-    // conserva el MEP con que se registró cada mes (no se toca al revisar).
+    // 2a. Ingreso: fuente única = tabla `sueldos` (no historico). Si hay sueldo del mes, precargar.
+    const sue = await fetchSueldoMes(year, mesNombre);
+    document.getElementById('ingreso').value = (sue && sue.sueldo_ars > 0) ? formatNumberAR(sue.sueldo_ars) : '';
+
+    // 2b. Resto del plan desde el histórico (fase / reserva diaria). El MEP es global (header).
     const hist = await fetchHistoricoMes(year, mesNombre);
     if (hist) {
-      if (hist.ingreso_ars > 0) {
-        document.getElementById('ingreso').value = formatNumberAR(hist.ingreso_ars);
-      }
       const faseInput = document.querySelector(`input[name="fase"][value="${hist.fase}"]`);
       if (faseInput) { faseInput.checked = true; actualizarRadios(); }
       if (hist.diario_ars > 0) {
@@ -4686,9 +4740,19 @@ document.querySelectorAll('input[name="fase"]').forEach(el => {
   el.addEventListener('change', () => { actualizarRadios(); calcular(); });
 });
 
+// Persiste el sueldo del mes actual en `sueldos` (fuente de verdad). Solo se llama en
+// edición del usuario; el set programático de loadCalcMonth NO dispara 'input'.
+function scheduleSueldoUpsert() {
+  clearTimeout(window._sueldoSaveTimer);
+  window._sueldoSaveTimer = setTimeout(() => {
+    const { year, mes } = getCalcSelection();
+    upsertSueldo(year, mes, parseARS(document.getElementById('ingreso').value) || 0);
+  }, 1200);
+}
+
 ['ingreso'].forEach(id => {
   const el = document.getElementById(id);
-  el.addEventListener('input', calcular);
+  el.addEventListener('input', () => { calcular(); scheduleSueldoUpsert(); });
   el.addEventListener('blur', () => {
     const n = parseARS(el.value);
     el.value = n > 0 ? formatNumberAR(n) : '';
@@ -4731,8 +4795,36 @@ const ARG_DATOS = {
     } finally {
       clearTimeout(timer);
     }
+  },
+  // Serie de inflación mensual: array asc de { fecha:"YYYY-MM-DD" (fin de mes), valor: % mensual }.
+  async getInflacion() {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    try {
+      const res = await fetch(`${this.base}/finanzas/indices/inflacion`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`ArgentinaDatos HTTP ${res.status}`);
+      const arr = await res.json();
+      if (!Array.isArray(arr)) throw new Error('Respuesta de inflación inválida');
+      return arr;
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+  // Serie diaria completa del MEP (casa "bolsa"): array asc de { casa, compra, venta, fecha }.
+  // Sirve para calcular el MEP promedio de cada mes.
+  async getMepSerie() {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    try {
+      const res = await fetch(`${this.base}/cotizaciones/dolares/bolsa`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`ArgentinaDatos HTTP ${res.status}`);
+      const arr = await res.json();
+      if (!Array.isArray(arr)) throw new Error('Respuesta de MEP inválida');
+      return arr;
+    } finally {
+      clearTimeout(timer);
+    }
   }
-  // Futuro: async getInflacion() → `${this.base}/finanzas/indices/inflacion`
 };
 
 const MEP_CACHE_KEY = 'mep_cache';
@@ -4758,6 +4850,52 @@ async function fetchMepVivo(force = false) {
   const { valor, fecha } = await ARG_DATOS.getMep();
   writeMepCache(valor, fecha);
   return { valor, fecha, fromCache: false };
+}
+
+const INFLACION_CACHE_KEY = 'inflacion_cache';
+const INFLACION_CACHE_TTL = 12 * 60 * 60 * 1000; // 12h (la inflación se publica 1 vez/mes)
+
+// Trae la serie de inflación mensual respetando un cache de 12h. Devuelve [] si falla.
+async function fetchInflacion(force = false) {
+  try {
+    const c = JSON.parse(localStorage.getItem(INFLACION_CACHE_KEY));
+    if (!force && c && Array.isArray(c.data) && (Date.now() - c.fetchedAt) < INFLACION_CACHE_TTL) {
+      return c.data;
+    }
+  } catch { /* cache inválido, sigue al fetch */ }
+  const data = await ARG_DATOS.getInflacion();
+  try { localStorage.setItem(INFLACION_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() })); } catch {}
+  return data;
+}
+
+const MEP_SERIE_CACHE_KEY = 'mep_serie_cache';
+const MEP_SERIE_CACHE_TTL = 12 * 60 * 60 * 1000; // 12h
+
+// Trae la serie diaria de MEP (cache 12h). Devuelve [] si falla.
+async function fetchMepSerie(force = false) {
+  try {
+    const c = JSON.parse(localStorage.getItem(MEP_SERIE_CACHE_KEY));
+    if (!force && c && Array.isArray(c.data) && (Date.now() - c.fetchedAt) < MEP_SERIE_CACHE_TTL) {
+      return c.data;
+    }
+  } catch { /* cache inválido */ }
+  const data = await ARG_DATOS.getMepSerie();
+  try { localStorage.setItem(MEP_SERIE_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() })); } catch {}
+  return data;
+}
+
+// MEP promedio del mes (year, monthIdx 0-11) = promedio de `venta` de los días de ese mes.
+// Devuelve null si el mes no tiene cotizaciones publicadas todavía.
+function mepPromedioMes(year, monthIdx, serie) {
+  const prefix = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+  let sum = 0, n = 0;
+  for (const r of (serie || [])) {
+    if (typeof r.fecha === 'string' && r.fecha.slice(0, 7) === prefix) {
+      const v = parseFloat(r.venta) || parseFloat(r.compra) || 0;
+      if (v > 0) { sum += v; n++; }
+    }
+  }
+  return n > 0 ? sum / n : null;
 }
 
 // Pinta el valor del chip global del MEP en el header (sin tocar el punto de estado).
@@ -4870,6 +5008,187 @@ function renderHistoricoView() {
 
   renderLineChart(rowsWithAcc);
   renderSueldoChart(rowsWithAcc);
+}
+
+let inflacionSerie = [];  // serie mensual de inflación (ArgentinaDatos), se carga en loadAndRenderSueldos
+
+// Cruza el sueldo nominal contra la inflación: acumula la inflación mensual desde el
+// primer mes registrado (S0) y arma el "sueldo ajustado" = S0 inflado a cada mes.
+// Meses sin inflación publicada (lag de ~1-2 meses) quedan en null (gap, no se inventa).
+function buildSueldoVsInflacion(rows, serie) {
+  if (!rows || rows.length === 0) return { months: [], headline: null };
+  const salaryOf = r => parseFloat(r.sueldo_ars ?? r.ingreso_ars) || 0;  // acepta filas de `sueldos` o de historico
+  const infByMonth = {};
+  for (const r of (serie || [])) {
+    if (r && typeof r.fecha === 'string') infByMonth[r.fecha.slice(0, 7)] = parseFloat(r.valor);
+  }
+  const S0 = salaryOf(rows[0]);
+  let factor = 1;                                  // factor de inflación acumulado desde M0
+  let cursorY = rows[0].year, cursorM = MESES.indexOf(rows[0].mes); // último mes ya acumulado
+  let incompleto = false;
+
+  const months = rows.map((r, idx) => {
+    const yi = r.year, mi = MESES.indexOf(r.mes);
+    const nominal = salaryOf(r);
+    if (idx > 0 && factor !== null) {
+      // avanzar mes a mes desde el cursor hasta Mi, multiplicando la inflación de cada mes
+      while (cursorY < yi || (cursorY === yi && cursorM < mi)) {
+        cursorM++; if (cursorM > 11) { cursorM = 0; cursorY++; }
+        const inf = infByMonth[`${cursorY}-${String(cursorM + 1).padStart(2, '0')}`];
+        if (inf === undefined || isNaN(inf)) { factor = null; incompleto = true; break; }
+        factor *= (1 + inf / 100);
+      }
+    }
+    const ajustado = factor === null ? null : S0 * factor;
+    return { year: yi, monthIdx: mi, mes: r.mes, nominal, ajustado };
+  });
+
+  let last = null;
+  for (let i = months.length - 1; i >= 0; i--) { if (months[i].ajustado !== null) { last = months[i]; break; } }
+  let headline = null;
+  if (last && months.length >= 2 && S0 > 0 && last.ajustado > 0) {
+    headline = {
+      desde: `${MESES_CORTOS[months[0].monthIdx]}-${String(months[0].year).slice(-2)}`,
+      hasta: `${MESES_CORTOS[last.monthIdx]}-${String(last.year).slice(-2)}`,
+      nominalPct: (last.nominal / S0 - 1) * 100,
+      inflacionPct: (last.ajustado / S0 - 1) * 100,
+      realPct: (last.nominal / last.ajustado - 1) * 100,
+      incompleto
+    };
+  }
+  return { months, headline };
+}
+
+// Gráfico sueldo nominal vs sueldo ajustado por inflación + resumen del período.
+function renderSueldoVsInflacion(rows) {
+  const resumen = document.getElementById('inflacion-resumen');
+  const { months, headline } = buildSueldoVsInflacion(rows, inflacionSerie);
+
+  if (resumen) {
+    if (!headline) {
+      resumen.textContent = (rows && rows.length < 2)
+        ? 'Registrá al menos 2 meses para comparar el sueldo con la inflación.'
+        : 'Sin datos de inflación disponibles.';
+      resumen.style.color = '#6b7280';
+    } else {
+      const sign = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%';
+      const gana = headline.realPct >= 0;
+      resumen.innerHTML =
+        `<strong>${headline.desde} → ${headline.hasta}:</strong> ` +
+        `sueldo ${sign(headline.nominalPct)} · inflación ${sign(headline.inflacionPct)} → ` +
+        `<strong style="color:${gana ? '#047857' : '#b91c1c'};">poder de compra ${sign(headline.realPct)} (${gana ? 'le gana' : 'pierde'})</strong>` +
+        (headline.incompleto ? ` <span style="color:#9ca3af;">· faltan meses de inflación publicada</span>` : '');
+      resumen.style.color = '#374151';
+    }
+  }
+
+  const chart = getChart('inflacion-chart');
+  if (!chart) return;
+  if (!months.length) {
+    chart.setOption({
+      graphic: [{ type: 'text', left: 'center', top: 'middle', style: { text: 'Sin datos todavía', fontSize: 14, fill: '#9ca3af', fontFamily: 'inherit' } }],
+      xAxis: { show: false }, yAxis: { show: false }, series: []
+    }, true);
+    return;
+  }
+
+  const labels = months.map(m => MESES_CORTOS[m.monthIdx] + ' ' + String(m.year).slice(-2));
+  const nominal = months.map(m => Math.round(m.nominal));
+  const ajustado = months.map(m => m.ajustado === null ? null : Math.round(m.ajustado));
+  const arsTick = v => {
+    const a = Math.abs(v);
+    if (a >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+    if (a >= 1e3) return '$' + Math.round(v / 1e3) + 'k';
+    return '$' + v;
+  };
+
+  chart.setOption({
+    color: ['#1e3a8a', '#ef4444'],
+    legend: { data: ['Sueldo nominal', 'Sueldo ajustado por inflación'], bottom: 0, itemWidth: 14, itemHeight: 8, textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' } },
+    grid: { left: 64, right: 24, top: 24, bottom: 50 },
+    xAxis: { type: 'category', data: labels, axisLine: { lineStyle: { color: '#cbd5e1' } }, axisTick: { show: false }, axisLabel: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' } },
+    yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#94a3b8', fontSize: 11, fontFamily: 'inherit', formatter: arsTick }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    tooltip: {
+      ...CHART_TOOLTIP, trigger: 'axis',
+      formatter: params => {
+        const m = months[params[0].dataIndex];
+        return `<strong>${m.mes} ${m.year}</strong><br/>` + params.map(p => {
+          const val = (p.value === null || p.value === undefined) ? 'sin dato' : formatARS(p.value);
+          return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${val}`;
+        }).join('<br/>');
+      }
+    },
+    series: [
+      { name: 'Sueldo nominal', type: 'line', data: nominal, smooth: true, showSymbol: true, symbolSize: 6, lineStyle: { width: 3 } },
+      { name: 'Sueldo ajustado por inflación', type: 'line', data: ajustado, smooth: true, showSymbol: true, symbolSize: 5, connectNulls: false, lineStyle: { width: 2, type: 'dashed' } }
+    ]
+  }, true);
+}
+
+/* =====================================================
+   TAB SUELDO — serie mensual de sueldo (fuente de verdad del ingreso)
+   ===================================================== */
+let mepSerie = [];                          // serie diaria de MEP (ArgentinaDatos), para promedios mensuales
+let sueldoYear = new Date().getFullYear();  // año mostrado en el tab Sueldo
+
+function populateSueldoYearSelect() {
+  const sel = document.getElementById('sueldo-year');
+  if (!sel || sel.options.length) { if (sel) sel.value = sueldoYear; return; }
+  const now = new Date().getFullYear();
+  for (let y = now + 1; y >= now - 3; y--) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    sel.appendChild(opt);
+  }
+  sel.value = sueldoYear;
+  sel.addEventListener('change', () => { sueldoYear = parseInt(sel.value); loadAndRenderSueldos(); });
+}
+
+async function loadAndRenderSueldos() {
+  populateSueldoYearSelect();
+  const [sueldos] = await Promise.all([
+    fetchSueldos(sueldoYear),
+    (async () => { try { mepSerie = await fetchMepSerie(); } catch (e) { console.error('MEP serie:', e); mepSerie = []; } })(),
+    (async () => { try { inflacionSerie = await fetchInflacion(); } catch (e) { console.error('Inflación:', e); inflacionSerie = []; } })()
+  ]);
+  renderSueldoTable(sueldos);
+  // Gráfico vs inflación: solo meses con sueldo cargado, en orden cronológico.
+  const conSueldo = sueldos.filter(s => (parseFloat(s.sueldo_ars) || 0) > 0);
+  renderSueldoVsInflacion(conSueldo);
+}
+
+// Tabla editable de sueldo por mes del año seleccionado + MEP promedio + sueldo USD.
+function renderSueldoTable(sueldos) {
+  const tbody = document.getElementById('sueldo-tbody');
+  if (!tbody) return;
+  const byMes = {};
+  for (const s of sueldos) byMes[s.mes] = parseFloat(s.sueldo_ars) || 0;
+  tbody.innerHTML = '';
+
+  MESES.forEach((mes, idx) => {
+    const sueldo = byMes[mes] || 0;
+    const mepProm = mepPromedioMes(sueldoYear, idx, mepSerie);
+    const usd = (sueldo > 0 && mepProm) ? sueldo / mepProm : null;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${mes}</td>
+      <td></td>
+      <td>${mepProm ? formatNumberAR(Math.round(mepProm)) : '—'}</td>
+      <td>${usd === null ? '—' : formatUSD(usd)}</td>
+    `;
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.inputMode = 'decimal'; inp.className = 'cell-input';
+    inp.style.width = '100%';
+    inp.value = sueldo > 0 ? formatNumberAR(sueldo) : '';
+    inp.addEventListener('change', async () => {
+      const val = parseARS(inp.value) || 0;
+      await upsertSueldo(sueldoYear, mes, val);
+      await loadAndRenderSueldos();
+    });
+    tr.children[1].appendChild(inp);
+    tbody.appendChild(tr);
+  });
 }
 
 // Gráfico de evolución del sueldo — barras pareadas (ARS azul, USD verde) + líneas de tendencia.
