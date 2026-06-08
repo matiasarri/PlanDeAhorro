@@ -522,6 +522,7 @@
     text-align: right;
   }
   .cell-input.cell-text { text-align: left; }
+  select.cell-input { text-align: left; }   /* los combos siempre alineados a la izquierda */
   .cell-input:focus { outline: none; border-color: #3b82f6; background: white; }
   .cell-input:hover { background: #f3f4f6; }
   .cell-input:focus:hover { background: white; }
@@ -2384,12 +2385,26 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <label for="sueldo-year" style="font-size:0.85em; color:#6b7280;">Año</label>
             <select id="sueldo-year" class="cell-input" style="width:auto;"></select>
+            <div class="panel-gear-wrapper">
+              <button type="button" class="panel-gear-btn" id="sueldo-gear-btn" aria-label="Configurar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </button>
+              <div class="panel-gear-menu hidden" id="sueldo-gear-menu">
+                <div style="padding:8px 12px;">
+                  <div style="font-size:0.8em; color:#6b7280; margin-bottom:4px;">Mi región (IPC)</div>
+                  <select id="config-region" class="cell-input" style="width:100%;"></select>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div style="overflow-x:auto;">
           <table class="historico-table" id="sueldo-table">
             <thead>
-              <tr><th>Mes</th><th>Sueldo (ARS)</th><th>MEP prom.</th><th>Sueldo USD</th></tr>
+              <tr><th>Mes</th><th>Sueldo (ARS)</th><th>IPC mensual</th><th>MEP prom.</th><th>Sueldo USD</th></tr>
             </thead>
             <tbody id="sueldo-tbody"></tbody>
           </table>
@@ -2400,7 +2415,13 @@
       </div>
 
       <div class="line-chart-wrapper">
-        <h3 style="color:#1e3a8a; margin-bottom:10px;">Sueldo vs inflación</h3>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+          <h3 style="color:#1e3a8a; margin:0;">Sueldo vs inflación</h3>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="inflacion-region" style="font-size:0.85em; color:#6b7280;">Ver región</label>
+            <select id="inflacion-region" class="cell-input" style="width:auto;"></select>
+          </div>
+        </div>
         <div id="inflacion-resumen" style="margin-bottom:8px; font-size:0.9em;"></div>
         <div id="inflacion-chart" class="echarts-container" style="width:100%;height:320px;"></div>
       </div>
@@ -3150,6 +3171,13 @@ async function upsertSueldo(year, mes, sueldoArs) {
   const { error } = await sb.from('sueldos').upsert({
     user_id: currentUser.id, year, mes, sueldo_ars: sueldoArs
   });
+  if (error) console.error(error);
+}
+
+// Upsert SOLO del ipc (no toca sueldo_ars). Se usa para grabar el IPC de la región config.
+async function setSueldoIpc(year, mes, ipc) {
+  if (!currentUser) return;
+  const { error } = await sb.from('sueldos').upsert({ user_id: currentUser.id, year, mes, ipc });
   if (error) console.error(error);
 }
 
@@ -4517,8 +4545,10 @@ async function loadCalcMonth(year, mesNombre) {
         gasto_id: g.id
       }));
 
-    // 2a. Ingreso: fuente única = tabla `sueldos` (no historico). Si hay sueldo del mes, precargar.
-    const sue = await fetchSueldoMes(year, mesNombre);
+    // 2a. Ingreso: fuente única = tabla `sueldos`. El plan de un mes se financia con el sueldo
+    // cobrado el mes ANTERIOR (el plan de Junio usa el sueldo de Mayo), así que leemos M-1.
+    const sueMes = mesAnteriorDe(year, mesNombre);
+    const sue = await fetchSueldoMes(sueMes.year, sueMes.mes);
     document.getElementById('ingreso').value = (sue && sue.sueldo_ars > 0) ? formatNumberAR(sue.sueldo_ars) : '';
 
     // 2b. Resto del plan desde el histórico (fase / reserva diaria). El MEP es global (header).
@@ -4742,11 +4772,20 @@ document.querySelectorAll('input[name="fase"]').forEach(el => {
 
 // Persiste el sueldo del mes actual en `sueldos` (fuente de verdad). Solo se llama en
 // edición del usuario; el set programático de loadCalcMonth NO dispara 'input'.
+// Mes anterior a (year, mesNombre). El plan de la calc se financia con el sueldo del mes previo.
+function mesAnteriorDe(year, mesNombre) {
+  let idx = MESES.indexOf(mesNombre) - 1;
+  let y = year;
+  if (idx < 0) { idx = 11; y = year - 1; }
+  return { year: y, mes: MESES[idx] };
+}
+
 function scheduleSueldoUpsert() {
   clearTimeout(window._sueldoSaveTimer);
   window._sueldoSaveTimer = setTimeout(() => {
     const { year, mes } = getCalcSelection();
-    upsertSueldo(year, mes, parseARS(document.getElementById('ingreso').value) || 0);
+    const sueMes = mesAnteriorDe(year, mes);   // calc mes J → sueldos mes J-1
+    upsertSueldo(sueMes.year, sueMes.mes, parseARS(document.getElementById('ingreso').value) || 0);
   }, 1200);
 }
 
@@ -4796,20 +4835,6 @@ const ARG_DATOS = {
       clearTimeout(timer);
     }
   },
-  // Serie de inflación mensual: array asc de { fecha:"YYYY-MM-DD" (fin de mes), valor: % mensual }.
-  async getInflacion() {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
-    try {
-      const res = await fetch(`${this.base}/finanzas/indices/inflacion`, { signal: ctrl.signal });
-      if (!res.ok) throw new Error(`ArgentinaDatos HTTP ${res.status}`);
-      const arr = await res.json();
-      if (!Array.isArray(arr)) throw new Error('Respuesta de inflación inválida');
-      return arr;
-    } finally {
-      clearTimeout(timer);
-    }
-  },
   // Serie diaria completa del MEP (casa "bolsa"): array asc de { casa, compra, venta, fecha }.
   // Sirve para calcular el MEP promedio de cada mes.
   async getMepSerie() {
@@ -4852,20 +4877,56 @@ async function fetchMepVivo(force = false) {
   return { valor, fecha, fromCache: false };
 }
 
-const INFLACION_CACHE_KEY = 'inflacion_cache';
+// ===== IPC por región (datos.gob.ar — Series de Tiempo, INDEC, sin API key) =====
+// Tasa de variación mensual del Nivel General por región (base dic-2016).
+const IPC_REGION_IDS = {
+  nacional:  '145.3_INGNACUAL_DICI_M_38',
+  gba:       '145.3_INGGBAUAL_DICI_M_33',
+  pampeana:  '145.3_INGPAMUAL_DICI_M_38',
+  cuyo:      '145.3_INGCUYUAL_DICI_M_34',
+  noa:       '145.3_INGNOAUAL_DICI_M_33',
+  nea:       '145.3_INGNEAUAL_DICI_M_33',
+  patagonia: '145.3_INGPATUAL_DICI_M_39'
+};
+const IPC_REGION_LABELS = {
+  nacional: 'Nacional', gba: 'GBA', pampeana: 'Pampeana', cuyo: 'Cuyo',
+  noa: 'Noroeste (NOA)', nea: 'Noreste (NEA)', patagonia: 'Patagonia'
+};
+
+const INFLACION_CACHE_KEY = 'inflacion_regional_cache';
 const INFLACION_CACHE_TTL = 12 * 60 * 60 * 1000; // 12h (la inflación se publica 1 vez/mes)
 
-// Trae la serie de inflación mensual respetando un cache de 12h. Devuelve [] si falla.
-async function fetchInflacion(force = false) {
+// Trae el IPC mensual de TODAS las regiones en un solo request y lo cachea 12h.
+// Devuelve { region: [{ fecha:"YYYY-MM-01", valor: % mensual }] }. {} si falla.
+async function fetchInflacionRegional(force = false) {
   try {
     const c = JSON.parse(localStorage.getItem(INFLACION_CACHE_KEY));
-    if (!force && c && Array.isArray(c.data) && (Date.now() - c.fetchedAt) < INFLACION_CACHE_TTL) {
-      return c.data;
-    }
-  } catch { /* cache inválido, sigue al fetch */ }
-  const data = await ARG_DATOS.getInflacion();
-  try { localStorage.setItem(INFLACION_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() })); } catch {}
-  return data;
+    if (!force && c && c.data && (Date.now() - c.fetchedAt) < INFLACION_CACHE_TTL) return c.data;
+  } catch { /* cache inválido */ }
+
+  const orden = Object.keys(IPC_REGION_IDS);
+  const ids = orden.map(k => IPC_REGION_IDS[k]).join(',');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 6000);
+  let rows;
+  try {
+    const res = await fetch(`https://apis.datos.gob.ar/series/api/series/?format=json&limit=5000&ids=${ids}`, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`datos.gob.ar HTTP ${res.status}`);
+    rows = (await res.json()).data || [];
+  } finally {
+    clearTimeout(timer);
+  }
+  // Cada fila: [fecha, val_nacional, val_gba, ...] en el orden de `orden`. Valor viene como fracción → ×100.
+  const out = {}; orden.forEach(k => out[k] = []);
+  for (const row of rows) {
+    const fecha = row[0];
+    orden.forEach((k, i) => {
+      const v = row[i + 1];
+      if (v != null) out[k].push({ fecha, valor: v * 100 });
+    });
+  }
+  try { localStorage.setItem(INFLACION_CACHE_KEY, JSON.stringify({ data: out, fetchedAt: Date.now() })); } catch {}
+  return out;
 }
 
 const MEP_SERIE_CACHE_KEY = 'mep_serie_cache';
@@ -5063,6 +5124,8 @@ function buildSueldoVsInflacion(rows, serie) {
 function renderSueldoVsInflacion(rows) {
   const resumen = document.getElementById('inflacion-resumen');
   const { months, headline } = buildSueldoVsInflacion(rows, inflacionSerie);
+  const regionLabel = IPC_REGION_LABELS[inflacionRegion] || 'Nacional';
+  const ajustadoNombre = `Sueldo ajustado (IPC ${regionLabel})`;
 
   if (resumen) {
     if (!headline) {
@@ -5077,6 +5140,7 @@ function renderSueldoVsInflacion(rows) {
         `<strong>${headline.desde} → ${headline.hasta}:</strong> ` +
         `sueldo ${sign(headline.nominalPct)} · inflación ${sign(headline.inflacionPct)} → ` +
         `<strong style="color:${gana ? '#047857' : '#b91c1c'};">poder de compra ${sign(headline.realPct)} (${gana ? 'le gana' : 'pierde'})</strong>` +
+        ` <span style="color:#9ca3af;">· IPC ${regionLabel}</span>` +
         (headline.incompleto ? ` <span style="color:#9ca3af;">· faltan meses de inflación publicada</span>` : '');
       resumen.style.color = '#374151';
     }
@@ -5104,7 +5168,7 @@ function renderSueldoVsInflacion(rows) {
 
   chart.setOption({
     color: ['#1e3a8a', '#ef4444'],
-    legend: { data: ['Sueldo nominal', 'Sueldo ajustado por inflación'], bottom: 0, itemWidth: 14, itemHeight: 8, textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' } },
+    legend: { data: ['Sueldo nominal', ajustadoNombre], bottom: 0, itemWidth: 14, itemHeight: 8, textStyle: { color: '#374151', fontSize: 12, fontFamily: 'inherit' } },
     grid: { left: 64, right: 24, top: 24, bottom: 50 },
     xAxis: { type: 'category', data: labels, axisLine: { lineStyle: { color: '#cbd5e1' } }, axisTick: { show: false }, axisLabel: { color: '#6b7280', fontSize: 11, fontFamily: 'inherit' } },
     yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#94a3b8', fontSize: 11, fontFamily: 'inherit', formatter: arsTick }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
@@ -5120,7 +5184,7 @@ function renderSueldoVsInflacion(rows) {
     },
     series: [
       { name: 'Sueldo nominal', type: 'line', data: nominal, smooth: true, showSymbol: true, symbolSize: 6, lineStyle: { width: 3 } },
-      { name: 'Sueldo ajustado por inflación', type: 'line', data: ajustado, smooth: true, showSymbol: true, symbolSize: 5, connectNulls: false, lineStyle: { width: 2, type: 'dashed' } }
+      { name: ajustadoNombre, type: 'line', data: ajustado, smooth: true, showSymbol: true, symbolSize: 5, connectNulls: false, lineStyle: { width: 2, type: 'dashed' } }
     ]
   }, true);
 }
@@ -5130,6 +5194,11 @@ function renderSueldoVsInflacion(rows) {
    ===================================================== */
 let mepSerie = [];                          // serie diaria de MEP (ArgentinaDatos), para promedios mensuales
 let sueldoYear = new Date().getFullYear();  // año mostrado en el tab Sueldo
+let inflacionPorRegion = {};                // { region: [{fecha, valor%}] } (datos.gob.ar)
+let configRegion = 'nacional';              // "mi región" (config, user_config.region) → define el IPC que se graba
+let inflacionRegion = 'nacional';           // región de VISTA (solo cambia lo que se muestra; default = configRegion)
+let sueldosTabConSueldo = [];               // meses con sueldo > 0 (para re-render del gráfico)
+let sueldosTabRows = [];                     // filas completas del año (para re-render de la tabla)
 
 function populateSueldoYearSelect() {
   const sel = document.getElementById('sueldo-year');
@@ -5144,20 +5213,100 @@ function populateSueldoYearSelect() {
   sel.addEventListener('change', () => { sueldoYear = parseInt(sel.value); loadAndRenderSueldos(); });
 }
 
-async function loadAndRenderSueldos() {
-  populateSueldoYearSelect();
-  const [sueldos] = await Promise.all([
-    fetchSueldos(sueldoYear),
-    (async () => { try { mepSerie = await fetchMepSerie(); } catch (e) { console.error('MEP serie:', e); mepSerie = []; } })(),
-    (async () => { try { inflacionSerie = await fetchInflacion(); } catch (e) { console.error('Inflación:', e); inflacionSerie = []; } })()
-  ]);
-  renderSueldoTable(sueldos);
-  // Gráfico vs inflación: solo meses con sueldo cargado, en orden cronológico.
-  const conSueldo = sueldos.filter(s => (parseFloat(s.sueldo_ars) || 0) > 0);
-  renderSueldoVsInflacion(conSueldo);
+function fillRegionOptions(sel) {
+  if (!sel || sel.options.length) return;
+  for (const k of Object.keys(IPC_REGION_LABELS)) {
+    const opt = document.createElement('option');
+    opt.value = k; opt.textContent = IPC_REGION_LABELS[k];
+    sel.appendChild(opt);
+  }
 }
 
-// Tabla editable de sueldo por mes del año seleccionado + MEP promedio + sueldo USD.
+// Combo "Ver región": SOLO vista. Cambia lo mostrado (tabla + gráfico) sin tocar config ni lo grabado.
+function populateInflacionRegionSelect() {
+  const sel = document.getElementById('inflacion-region');
+  if (!sel) return;
+  if (!sel.options.length) {
+    fillRegionOptions(sel);
+    sel.addEventListener('change', () => {
+      inflacionRegion = sel.value;
+      inflacionSerie = inflacionPorRegion[inflacionRegion] || [];
+      renderSueldoTable(sueldosTabRows);
+      renderSueldoVsInflacion(sueldosTabConSueldo);
+    });
+  }
+  sel.value = inflacionRegion;
+}
+
+// Engranaje "Mi región": CONFIG. Persiste user_config.region, define el IPC que se graba, y resetea la vista a esa región.
+function populateConfigRegionSelect() {
+  const sel = document.getElementById('config-region');
+  if (!sel) return;
+  if (!sel.options.length) {
+    fillRegionOptions(sel);
+    sel.addEventListener('change', async () => {
+      configRegion = sel.value;
+      upsertUserConfig({ region: configRegion });
+      inflacionRegion = configRegion;                       // la vista vuelve a tu región
+      const viewSel = document.getElementById('inflacion-region');
+      if (viewSel) viewSel.value = inflacionRegion;
+      inflacionSerie = inflacionPorRegion[inflacionRegion] || [];
+      await persistIpcConfigRegion(sueldosTabRows);         // regraba el IPC con la nueva región
+      renderSueldoTable(sueldosTabRows);
+      renderSueldoVsInflacion(sueldosTabConSueldo);
+      document.getElementById('sueldo-gear-menu')?.classList.add('hidden');
+    });
+  }
+  sel.value = configRegion;
+}
+
+// Graba en sueldos.ipc el IPC mensual de la región CONFIG, para los meses con dato publicado.
+async function persistIpcConfigRegion(sueldos) {
+  const serie = inflacionPorRegion[configRegion];
+  if (!serie || !serie.length) return;
+  for (const s of sueldos) {
+    const ipc = ipcDelMes(s.year, MESES.indexOf(s.mes), serie);
+    if (ipc === null) continue;
+    const stored = (s.ipc === null || s.ipc === undefined) ? null : parseFloat(s.ipc);
+    if (stored === null || Math.abs(stored - ipc) > 0.001) {
+      s.ipc = ipc;                                          // sync en memoria
+      await setSueldoIpc(s.year, s.mes, ipc);
+    }
+  }
+}
+
+async function loadAndRenderSueldos() {
+  populateSueldoYearSelect();
+  const [sueldos, cfg] = await Promise.all([
+    fetchSueldos(sueldoYear),
+    fetchUserConfig(),
+    (async () => { try { mepSerie = await fetchMepSerie(); } catch (e) { console.error('MEP serie:', e); mepSerie = []; } })(),
+    (async () => { try { inflacionPorRegion = await fetchInflacionRegional(); } catch (e) { console.error('Inflación:', e); inflacionPorRegion = {}; } })()
+  ]);
+  if (cfg && cfg.region && IPC_REGION_LABELS[cfg.region]) configRegion = cfg.region;
+  inflacionRegion = configRegion;                           // la vista arranca en tu región config
+  populateConfigRegionSelect();
+  populateInflacionRegionSelect();
+  inflacionSerie = inflacionPorRegion[inflacionRegion] || [];
+
+  sueldosTabRows = sueldos;
+  await persistIpcConfigRegion(sueldos);                    // graba el IPC de tu región en la tabla
+  renderSueldoTable(sueldos);
+  // Gráfico vs inflación: solo meses con sueldo cargado, en orden cronológico.
+  sueldosTabConSueldo = sueldos.filter(s => (parseFloat(s.sueldo_ars) || 0) > 0);
+  renderSueldoVsInflacion(sueldosTabConSueldo);
+}
+
+// IPC (% variación mensual) de un mes para la serie de la región activa. null si no hay dato.
+function ipcDelMes(year, monthIdx, serie) {
+  const key = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+  for (const r of (serie || [])) {
+    if (typeof r.fecha === 'string' && r.fecha.slice(0, 7) === key) return parseFloat(r.valor);
+  }
+  return null;
+}
+
+// Tabla editable de sueldo por mes del año seleccionado + IPC mensual (región) + MEP promedio + sueldo USD.
 function renderSueldoTable(sueldos) {
   const tbody = document.getElementById('sueldo-tbody');
   if (!tbody) return;
@@ -5169,11 +5318,13 @@ function renderSueldoTable(sueldos) {
     const sueldo = byMes[mes] || 0;
     const mepProm = mepPromedioMes(sueldoYear, idx, mepSerie);
     const usd = (sueldo > 0 && mepProm) ? sueldo / mepProm : null;
+    const ipc = ipcDelMes(sueldoYear, idx, inflacionSerie);
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${mes}</td>
       <td></td>
+      <td>${ipc === null ? '—' : ipc.toFixed(1) + '%'}</td>
       <td>${mepProm ? formatNumberAR(Math.round(mepProm)) : '—'}</td>
       <td>${usd === null ? '—' : formatUSD(usd)}</td>
     `;
@@ -5605,6 +5756,9 @@ async function initApp() {
     // Inicializar carrusel en mes/año actual y disparar carga
     const now = new Date();
     await setCalcMonth(now.getFullYear(), now.getMonth());
+
+    // Intentar sincronizar IOL en segundo plano (no bloquea el arranque).
+    syncIolEnInicio();
   } catch (err) {
     console.error(err);
     showToast('Error inicializando: ' + err.message, 'error');
@@ -5846,6 +6000,26 @@ async function fetchIolPreviousTotalUSD(currentSnapshotAt, mep) {
 // (el botón "Refrescar" es force = ignora el throttle).
 let lastIolSyncAt = 0;
 const IOL_SYNC_THROTTLE = 60 * 1000; // 60s
+
+// Sync de IOL en background al iniciar sesión / recargar la página. Solo si hay
+// credenciales (evita llamar al Edge Function para usuarios sin IOL) y respeta el throttle.
+// Si el usuario está mirando Brokers en ese momento, refresca la vista.
+async function syncIolEnInicio() {
+  if (!currentUser) return;
+  const { data: creds } = await sb.from('iol_credentials').select('user_id')
+    .eq('user_id', currentUser.id).maybeSingle();
+  if (!creds) return;
+  if ((Date.now() - lastIolSyncAt) < IOL_SYNC_THROTTLE) return;
+  try {
+    await callIolProxy('sync_portfolio');
+    lastIolSyncAt = Date.now();
+    if (document.querySelector('.tab-btn.active')?.dataset?.tab === 'inversiones') {
+      await loadAndRenderIol({ showLoading: false });
+    }
+  } catch (err) {
+    console.error('Sync IOL inicio:', err);
+  }
+}
 
 async function syncAndRenderIol({ force = false, showLoading = true } = {}) {
   await loadAndRenderIol({ showLoading });
@@ -7008,6 +7182,10 @@ document.getElementById('iol-gear-btn')?.addEventListener('click', e => {
 document.getElementById('cocos-gear-btn')?.addEventListener('click', e => {
   e.stopPropagation();
   togglePanelGearMenu('cocos-gear-menu', 'cocos-gear-btn');
+});
+document.getElementById('sueldo-gear-btn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  togglePanelGearMenu('sueldo-gear-menu', 'sueldo-gear-btn');
 });
 // Click fuera → cierra cualquier menú gear
 document.addEventListener('click', e => {
