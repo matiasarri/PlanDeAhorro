@@ -336,6 +336,9 @@
     position: relative;
     flex-shrink: 0;
   }
+  /* Botón de refresh de indicadores girando mientras consulta las APIs */
+  .panel-gear-btn.is-refreshing svg { animation: spin 0.8s linear infinite; }
+  .panel-gear-btn:disabled { cursor: default; opacity: 0.6; }
   .panel-gear-btn {
     background: transparent;
     border: none;
@@ -2385,6 +2388,12 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <label for="sueldo-year" style="font-size:0.85em; color:#6b7280;">Año</label>
             <select id="sueldo-year" class="cell-input" style="width:auto;"></select>
+            <button type="button" class="panel-gear-btn" id="sueldo-refresh-btn" title="Actualizar IPC y MEP (fuerza la consulta a INDEC / ArgentinaDatos)" aria-label="Actualizar indicadores">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="19" height="19">
+                <path d="M21 12a9 9 0 1 1-3.5-7.1"/>
+                <polyline points="21 3 21 9 15 9"/>
+              </svg>
+            </button>
             <div class="panel-gear-wrapper">
               <button type="button" class="panel-gear-btn" id="sueldo-gear-btn" aria-label="Configurar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
@@ -4914,9 +4923,13 @@ const INFLACION_CACHE_TTL = 12 * 60 * 60 * 1000; // 12h (la inflación se public
 // Trae el IPC mensual de TODAS las regiones en un solo request y lo cachea 12h.
 // Devuelve { region: [{ fecha:"YYYY-MM-01", valor: % mensual }] }. {} si falla.
 async function fetchInflacionRegional(force = false) {
+  let stale = null;                       // último dato conocido, por si la red falla
   try {
     const c = JSON.parse(localStorage.getItem(INFLACION_CACHE_KEY));
-    if (!force && c && c.data && (Date.now() - c.fetchedAt) < INFLACION_CACHE_TTL) return c.data;
+    if (c && c.data) {
+      stale = c.data;
+      if (!force && (Date.now() - c.fetchedAt) < INFLACION_CACHE_TTL) return c.data;
+    }
   } catch { /* cache inválido */ }
 
   const orden = Object.keys(IPC_REGION_IDS);
@@ -4928,6 +4941,10 @@ async function fetchInflacionRegional(force = false) {
     const res = await fetch(`https://apis.datos.gob.ar/series/api/series/?format=json&limit=5000&ids=${ids}`, { signal: ctrl.signal });
     if (!res.ok) throw new Error(`datos.gob.ar HTTP ${res.status}`);
     rows = (await res.json()).data || [];
+  } catch (e) {
+    // Sin red o API caída: mejor el último dato conocido que la tabla vacía.
+    if (stale) { console.error('Inflación (usando cache stale):', e); return stale; }
+    throw e;
   } finally {
     clearTimeout(timer);
   }
@@ -4949,13 +4966,21 @@ const MEP_SERIE_CACHE_TTL = 12 * 60 * 60 * 1000; // 12h
 
 // Trae la serie diaria de MEP (cache 12h). Devuelve [] si falla.
 async function fetchMepSerie(force = false) {
+  let stale = null;                       // último dato conocido, por si la red falla
   try {
     const c = JSON.parse(localStorage.getItem(MEP_SERIE_CACHE_KEY));
-    if (!force && c && Array.isArray(c.data) && (Date.now() - c.fetchedAt) < MEP_SERIE_CACHE_TTL) {
-      return c.data;
+    if (c && Array.isArray(c.data)) {
+      stale = c.data;
+      if (!force && (Date.now() - c.fetchedAt) < MEP_SERIE_CACHE_TTL) return c.data;
     }
   } catch { /* cache inválido */ }
-  const data = await ARG_DATOS.getMepSerie();
+  let data;
+  try {
+    data = await ARG_DATOS.getMepSerie();
+  } catch (e) {
+    if (stale) { console.error('MEP serie (usando cache stale):', e); return stale; }
+    throw e;
+  }
   try { localStorage.setItem(MEP_SERIE_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() })); } catch {}
   return data;
 }
@@ -5315,6 +5340,29 @@ async function loadAndRenderSueldos() {
   renderSueldoVsInflacion(sueldosTabConSueldo);
 }
 
+// Vuelve a pedir las series de indicadores (IPC regional + MEP diario) y re-renderiza el tab.
+// Con `force` saltea los caches de 12h de localStorage — es lo que dispara el botón de refresh y
+// la carga de un sueldo nuevo (cuando carguás el sueldo del mes, el IPC del mes anterior ya suele
+// estar publicado). Si la red falla se conserva lo que había: nunca vacía la tabla.
+async function refrescarIndicadoresSueldo(force = false) {
+  const btn = document.getElementById('sueldo-refresh-btn');
+  if (btn) { btn.disabled = true; btn.classList.add('is-refreshing'); }
+  try {
+    const [serieMep, porRegion] = await Promise.all([
+      fetchMepSerie(force).catch(e => { console.error('MEP serie:', e); return mepSerie; }),
+      fetchInflacionRegional(force).catch(e => { console.error('Inflación:', e); return inflacionPorRegion; })
+    ]);
+    mepSerie = serieMep;
+    inflacionPorRegion = porRegion;
+    inflacionSerie = inflacionPorRegion[inflacionRegion] || [];
+    await persistIpcConfigRegion(sueldosTabHist);          // graba el IPC recién publicado
+    renderSueldoTable(sueldosTabRows);
+    renderSueldoVsInflacion(sueldosTabConSueldo);
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('is-refreshing'); }
+  }
+}
+
 // IPC (% variación mensual) de un mes para la serie de la región activa. null si no hay dato.
 function ipcDelMes(year, monthIdx, serie) {
   const key = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
@@ -5354,6 +5402,7 @@ function renderSueldoTable(sueldos) {
       const val = parseARS(inp.value) || 0;
       await upsertSueldo(sueldoYear, mes, val);
       await loadAndRenderSueldos();
+      await refrescarIndicadoresSueldo(true);              // trae el IPC/MEP publicado desde la última vez
     });
     tr.children[1].appendChild(inp);
     tbody.appendChild(tr);
@@ -7394,6 +7443,8 @@ document.getElementById('cocos-gear-btn')?.addEventListener('click', e => {
   e.stopPropagation();
   togglePanelGearMenu('cocos-gear-menu', 'cocos-gear-btn');
 });
+document.getElementById('sueldo-refresh-btn')?.addEventListener('click', () => refrescarIndicadoresSueldo(true));
+
 document.getElementById('sueldo-gear-btn')?.addEventListener('click', e => {
   e.stopPropagation();
   togglePanelGearMenu('sueldo-gear-menu', 'sueldo-gear-btn');

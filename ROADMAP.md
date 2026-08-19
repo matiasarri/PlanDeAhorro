@@ -82,7 +82,24 @@ CLAUDE_CONTEXT_BRIEFING (para futuras sesiones de Claude Code):
   multi-año (`MESES_CORTOS[m.monthIdx] + año`), así que ahora muestra la serie entera.
   Archivos: `index.html` (`fetchSueldos`, `loadAndRenderSueldos`, handler "Mi región") ·
   `src/lib/api.js` + `src/components/TabSueldo.vue`.
-- SW bumpeado a `plan-cloud-v68`.
+- **IPC/MEP congelados: el service worker era cache-first para TODO lo no-Supabase.** La URL de las
+  series (datos.gob.ar y ArgentinaDatos) es siempre idéntica, así que `caches.match` daba hit y el SW
+  devolvía **para siempre** la primera respuesta: los meses nuevos de IPC y MEP no aparecían nunca
+  (solo al bumpear `CACHE_NAME`, que es lo único que limpiaba el cache). El TTL de 12h del
+  localStorage era irrelevante, la red nunca se consultaba. Fix: rama **network-first con fallback a
+  cache** para `datos.gob.ar` / `argentinadatos` en `service-worker.js` — la misma estrategia que ya
+  tenía la versión Vue en `vite.config.js` (`runtimeCaching` NetworkFirst), donde el bug no existía.
+- **Botón de refresh manual de indicadores** en el header del tab Sueldo (`#sueldo-refresh-btn`,
+  ícono que gira mientras consulta): `refrescarIndicadoresSueldo(true)` pide IPC + MEP salteando los
+  caches de 12h, regraba `sueldos.ipc` y re-renderiza tabla y gráfico.
+- **Refresh automático al cargar un sueldo**: el handler `change` del input de sueldo llama a
+  `refrescarIndicadoresSueldo(true)` después del upsert — al cargar el sueldo del mes, el IPC del mes
+  anterior ya suele estar publicado.
+- **Fallback a cache stale** en `fetchInflacionRegional` / `fetchMepSerie`: si la red falla devuelven
+  el último dato conocido de localStorage en vez de tirar excepción (antes el cache-first del SW
+  tapaba esto; sacándolo, sin fallback la tabla quedaría vacía offline). Aplicado en los dos
+  frontends (`index.html` y `src/lib/indicadores.js`).
+- SW bumpeado a `plan-cloud-v69`.
 
 ---
 

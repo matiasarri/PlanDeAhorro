@@ -1,7 +1,7 @@
 // Service Worker para PWA — Plan Cloud
 // Estrategia: cache-first para assets estáticos, network-first para datos de Supabase.
 
-const CACHE_NAME = 'plan-cloud-v68';
+const CACHE_NAME = 'plan-cloud-v69';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json',
@@ -34,6 +34,24 @@ self.addEventListener('fetch', event => {
   // Llamadas a Supabase (datos dinámicos): network-only, fallback cero
   if (url.hostname.endsWith('supabase.co')) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // APIs de indicadores (IPC de datos.gob.ar, MEP de ArgentinaDatos): NETWORK-FIRST.
+  // La URL de estas series es siempre idéntica, así que con la estrategia cache-first de
+  // abajo el SW devolvía para siempre la primera respuesta y las series quedaban congeladas
+  // (el IPC y el MEP de los meses nuevos nunca aparecían hasta bumpear CACHE_NAME).
+  // Ahora: red primero, y solo si falla se cae al último dato cacheado (offline).
+  if (url.hostname.includes('datos.gob.ar') || url.hostname.includes('argentinadatos')) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (event.request.method === 'GET' && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
     return;
   }
 
