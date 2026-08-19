@@ -2777,6 +2777,27 @@
           <a href="#" id="goto-calc-pr">Calculadora</a> y registrá al menos un mes.
         </div>
       </div>
+
+      <div class="panel">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
+          <h3 style="margin:0;">Rebalanceo</h3>
+          <div class="panel-gear-wrapper">
+            <button type="button" class="panel-gear-btn" id="rebalanceo-gear-btn" aria-label="Configurar matcheo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="info-box" style="margin-bottom:12px;">
+          Composición real de cada frasco vs el target, y cómo repartir el <strong>próximo aporte</strong>
+          (el que calcula la Calculadora) para acercarte al objetivo. No vende ni mueve lo que ya tenés: solo dirige el aporte nuevo.
+          Usá el engranaje para matchear cada símbolo con el instrumento del plan.
+        </div>
+        <div id="rebalanceo-config" class="hidden" style="margin-bottom:12px; padding:12px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px;"></div>
+        <div id="rebalanceo-cont"></div>
+      </div>
     </section>
   </div>
 </div>
@@ -2919,6 +2940,8 @@ let gastosCache = [];      // gastos del año actual (cache local)
 let historicoCache = [];   // todos los registros del histórico
 let deducciones = [];      // gastos de la calculadora — { desc, monto, gasto_id? }
 let currentMep = 1500;     // MEP global en vivo (ArgentinaDatos). Única fuente para calc + Brokers + Plan vs Real.
+let aporteCalc = { colchon: 0, casa: 0, jubilacion: 0 };  // aporte por frasco (USD) que computa la calc, para el rebalanceo
+let rebHoldings = {};      // holdings reales por frasco/símbolo (último snapshot), para re-render del rebalanceo
 // Reserva uso diario: por defecto se propone el 50% del excedente.
 // Cuando el user toca el input, pasa a manual y respeta su valor hasta cambiar de mes.
 let reservaDiariaAuto = true;
@@ -3152,11 +3175,15 @@ async function fetchUserConfig() {
 }
 
 // Sueldos: fuente de verdad del ingreso mensual (separado del snapshot del plan).
-async function fetchSueldos(year) {
+// Sin `year` trae TODO el histórico del usuario. El gráfico sueldo vs inflación necesita
+// el histórico completo: el IPC se acumula desde el primer sueldo registrado, cruzando años.
+async function fetchSueldos(year = null) {
   if (!currentUser) return [];
-  const { data, error } = await sb.from('sueldos').select('*').eq('user_id', currentUser.id).eq('year', year);
+  let q = sb.from('sueldos').select('*').eq('user_id', currentUser.id);
+  if (year !== null) q = q.eq('year', year);
+  const { data, error } = await q;
   if (error) { console.error(error); return []; }
-  return (data || []).sort((a, b) => MESES.indexOf(a.mes) - MESES.indexOf(b.mes));
+  return (data || []).sort((a, b) => (a.year - b.year) || (MESES.indexOf(a.mes) - MESES.indexOf(b.mes)));
 }
 
 async function fetchSueldoMes(year, mes) {
@@ -3456,7 +3483,6 @@ function buildGastoRow(item, idx) {
   tr.appendChild(tdConcepto);
 
   // Meses
-  const monthInputs = [];
   MESES_LOWER.forEach((mesKey, mIdx) => {
     const td = document.createElement('td');
     td.className = 'month-col';
@@ -3468,32 +3494,18 @@ function buildGastoRow(item, idx) {
     const val = parseFloat(item[mesKey]) || 0;
     input.value = val > 0 ? formatNumberAR(val) : '';
     input.placeholder = '—';
-    monthInputs.push(input);
     input.addEventListener('input', e => {
       const num = parseARS(e.target.value);
       gastosCache[idx][mesKey] = num;
-      const fieldsToSave = { [mesKey]: num };
-      // GASTO FIJO: propagar a meses siguientes que estén vacíos.
-      // Un gasto fijo se repite mes a mes — si ponés $100K en marzo, abre/may/jun
-      // se autocompletan en $100K salvo que ya tengan otro valor cargado.
-      if (isFijo && num > 0) {
-        for (let m = mIdx + 1; m < 12; m++) {
-          const futKey = MESES_LOWER[m];
-          const futVal = parseFloat(gastosCache[idx][futKey]) || 0;
-          if (futVal === 0) {
-            gastosCache[idx][futKey] = num;
-            fieldsToSave[futKey] = num;
-            monthInputs[m].value = formatNumberAR(num);
-          }
-        }
-      }
+      // Cada mes se carga por separado: el importe NO se replica a los meses
+      // siguientes, tampoco en los gastos fijos.
       updateRowTotal(tr, gastosCache[idx]);
       renderTotalsRow();
       renderStats();
       renderChart();
       // También refrescar el total de la categoría
       refreshCatHeaderTotals();
-      scheduleGastoUpdate(item.id, fieldsToSave);
+      scheduleGastoUpdate(item.id, { [mesKey]: num });
     });
     input.addEventListener('blur', e => {
       const n = parseARS(e.target.value);
@@ -4354,6 +4366,9 @@ function calcular() {
   renderFrascoDetails('casa', casArs, mep);
   renderFrascoDetails('jubilacion', jubArs, mep);
 
+  // Exponer el aporte por frasco (USD) para el rebalanceo (tab Plan vs Real).
+  aporteCalc = { colchon: colArs / mep, casa: casArs / mep, jubilacion: jubArs / mep };
+
   // Persistir preferencias del usuario (debounced via timer simple)
   clearTimeout(window._configSaveTimer);
   window._configSaveTimer = setTimeout(() => {
@@ -5197,8 +5212,9 @@ let sueldoYear = new Date().getFullYear();  // año mostrado en el tab Sueldo
 let inflacionPorRegion = {};                // { region: [{fecha, valor%}] } (datos.gob.ar)
 let configRegion = 'nacional';              // "mi región" (config, user_config.region) → define el IPC que se graba
 let inflacionRegion = 'nacional';           // región de VISTA (solo cambia lo que se muestra; default = configRegion)
-let sueldosTabConSueldo = [];               // meses con sueldo > 0 (para re-render del gráfico)
-let sueldosTabRows = [];                     // filas completas del año (para re-render de la tabla)
+let sueldosTabHist = [];                    // TODAS las filas de `sueldos` del usuario (todos los años)
+let sueldosTabConSueldo = [];               // meses con sueldo > 0 de todo el histórico (para el gráfico vs inflación)
+let sueldosTabRows = [];                     // filas del año seleccionado (para re-render de la tabla)
 
 function populateSueldoYearSelect() {
   const sel = document.getElementById('sueldo-year');
@@ -5251,7 +5267,7 @@ function populateConfigRegionSelect() {
       const viewSel = document.getElementById('inflacion-region');
       if (viewSel) viewSel.value = inflacionRegion;
       inflacionSerie = inflacionPorRegion[inflacionRegion] || [];
-      await persistIpcConfigRegion(sueldosTabRows);         // regraba el IPC con la nueva región
+      await persistIpcConfigRegion(sueldosTabHist);         // regraba el IPC con la nueva región (todos los años)
       renderSueldoTable(sueldosTabRows);
       renderSueldoVsInflacion(sueldosTabConSueldo);
       document.getElementById('sueldo-gear-menu')?.classList.add('hidden');
@@ -5278,7 +5294,7 @@ async function persistIpcConfigRegion(sueldos) {
 async function loadAndRenderSueldos() {
   populateSueldoYearSelect();
   const [sueldos, cfg] = await Promise.all([
-    fetchSueldos(sueldoYear),
+    fetchSueldos(),                                          // histórico completo (todos los años)
     fetchUserConfig(),
     (async () => { try { mepSerie = await fetchMepSerie(); } catch (e) { console.error('MEP serie:', e); mepSerie = []; } })(),
     (async () => { try { inflacionPorRegion = await fetchInflacionRegional(); } catch (e) { console.error('Inflación:', e); inflacionPorRegion = {}; } })()
@@ -5289,10 +5305,12 @@ async function loadAndRenderSueldos() {
   populateInflacionRegionSelect();
   inflacionSerie = inflacionPorRegion[inflacionRegion] || [];
 
-  sueldosTabRows = sueldos;
-  await persistIpcConfigRegion(sueldos);                    // graba el IPC de tu región en la tabla
-  renderSueldoTable(sueldos);
-  // Gráfico vs inflación: solo meses con sueldo cargado, en orden cronológico.
+  sueldosTabHist = sueldos;
+  sueldosTabRows = sueldos.filter(s => s.year === sueldoYear);  // la tabla muestra solo el año elegido
+  await persistIpcConfigRegion(sueldos);                    // graba el IPC de tu región en toda la tabla
+  renderSueldoTable(sueldosTabRows);
+  // Gráfico vs inflación: TODO el histórico con sueldo cargado, en orden cronológico. El IPC se
+  // acumula desde el primer sueldo registrado — no se reinicia en cada enero.
   sueldosTabConSueldo = sueldos.filter(s => (parseFloat(s.sueldo_ars) || 0) > 0);
   renderSueldoVsInflacion(sueldosTabConSueldo);
 }
@@ -5547,11 +5565,12 @@ function renderLineChart(rows) {
    ===================================================== */
 async function loadAndRenderPlanVsReal() {
   try {
-    const [historicoRows, iolRows, cocosRows, mapping, cfg] = await Promise.all([
+    const [historicoRows, iolRows, cocosRows, mapping, instrumentos, cfg] = await Promise.all([
       fetchHistorico(),
       fetchAllIolSnapshots(),
       fetchAllCocosSnapshots(),
       fetchIolMapping(),
+      fetchIolInstrumentos(),
       fetchUserConfig()
     ]);
     const defaultMep = currentMep || (cfg?.default_mep) || 1500;
@@ -5559,10 +5578,183 @@ async function loadAndRenderPlanVsReal() {
     renderPlanVsRealSummary(months);
     renderPlanVsRealTable(months);
     renderPlanVsRealChart(months);
+
+    // Rebalanceo: composición real (último snapshot) agrupada por instrumento del plan + reparto del aporte.
+    iolState.instrumentos = instrumentos;
+    rebHoldings = holdingsPorFrascoSimbolo(iolRows, cocosRows, mapping, defaultMep);
+    renderRebalanceo(buildRebalanceo(rebHoldings, instrumentos, aporteCalc));
+    renderRebalanceoConfig(rebHoldings);
   } catch (err) {
     console.error(err);
     showToast('Error cargando Plan vs Real: ' + err.message, 'error');
   }
+}
+
+/* ===== Rebalanceo ===== */
+
+// Holdings reales por frasco y símbolo, del snapshot más reciente (IOL + Cocos). { frasco: { simbolo: usd } }
+function holdingsPorFrascoSimbolo(iolRows, cocosRows, mapping, mep) {
+  const iol = pickIolBefore(iolRows, Infinity);          // último snapshot IOL
+  const cocos = pickCocosBefore(cocosRows, '9999-12-31'); // último snapshot Cocos
+  const out = {};
+  const add = (simbolo, usd) => {
+    if (!simbolo) return;
+    const frasco = mapping[simbolo] || 'libre';
+    (out[frasco] || (out[frasco] = {}));
+    out[frasco][simbolo] = (out[frasco][simbolo] || 0) + usd;
+  };
+  for (const p of iol) {
+    const v = parseFloat(p.valorizado) || 0;
+    add(p.simbolo, p.moneda === 'dolar_Estadounidense' ? v : v / mep);
+  }
+  for (const p of cocos) {
+    if (isCashPosition(p)) continue;
+    const t = parseFloat(p.total) || 0;
+    add(p.simbolo, p.moneda === 'USD' ? t : t / mep);
+  }
+  return out;
+}
+
+// Resuelve a qué instrumento del plan corresponde un símbolo dentro de su frasco:
+// 1) matcheo manual (iolState.instrumentos), 2) auto: símbolo == nombre del plan-item (SPYD/QQQD),
+// 3) auto: si el frasco tiene un solo instrumento (Colchón). null = sin matchear.
+function planItemDe(simbolo, frasco, instrumentos) {
+  const items = INSTRUMENTS[frasco] || [];
+  const manual = instrumentos[simbolo];
+  if (manual && items.some(i => i.name === manual)) return manual;
+  const porNombre = items.find(i => i.name.toUpperCase() === String(simbolo).toUpperCase());
+  if (porNombre) return porNombre.name;
+  if (items.length === 1) return items[0].name;
+  return null;
+}
+
+// Cash-flow rebalancing: reparte `aporte` priorizando lo sub-ponderado. items: [{key, real, targetPct}].
+function repartirAporte(items, aporte) {
+  const res = {};
+  if (aporte <= 0) { items.forEach(i => res[i.key] = 0); return res; }
+  const total = items.reduce((s, i) => s + i.real, 0);
+  const faltas = items.map(i => Math.max(0, (total + aporte) * (i.targetPct || 0) - i.real));
+  const sumFalta = faltas.reduce((a, b) => a + b, 0);
+  items.forEach((i, idx) => {
+    res[i.key] = sumFalta > 0.0001 ? aporte * (faltas[idx] / sumFalta) : aporte * (i.targetPct || 0);
+  });
+  return res;
+}
+
+// Arma el rebalanceo por frasco, agrupando las tenencias reales por instrumento del plan
+// (matcheado vía planItemDe). aporte = { colchon, casa, jubilacion } USD (de la calc).
+function buildRebalanceo(holdings, instrumentos, aporte) {
+  const result = {};
+  for (const frasco of ['colchon', 'casa', 'jubilacion']) {
+    const items = INSTRUMENTS[frasco] || [];
+    const held = holdings[frasco] || {};
+    const total = Object.values(held).reduce((a, b) => a + b, 0);
+    const aporteF = aporte[frasco] || 0;
+
+    const realPorItem = {}, simbolosPorItem = {};
+    let sinMatchUsd = 0; const sinMatchSim = [];
+    for (const [sim, usd] of Object.entries(held)) {
+      const item = planItemDe(sim, frasco, instrumentos);
+      if (!item) { sinMatchUsd += usd; sinMatchSim.push(sim); continue; }
+      realPorItem[item] = (realPorItem[item] || 0) + usd;
+      (simbolosPorItem[item] || (simbolosPorItem[item] = [])).push(sim);
+    }
+    const reparto = repartirAporte(items.map(i => ({ key: i.name, real: realPorItem[i.name] || 0, targetPct: i.pct })), aporteF);
+    const rows = items.map(i => {
+      const real = realPorItem[i.name] || 0;
+      return {
+        nombre: i.name, simbolos: simbolosPorItem[i.name] || [], real,
+        realPct: total > 0 ? real / total : 0, targetPct: i.pct,
+        desvio: (total > 0 ? real / total : 0) - i.pct,
+        aporteSugerido: reparto[i.name] || 0
+      };
+    });
+    if (sinMatchUsd > 0) {
+      rows.push({ nombre: 'Sin matchear', simbolos: sinMatchSim, real: sinMatchUsd,
+        realPct: total > 0 ? sinMatchUsd / total : 0, targetPct: null, desvio: null, aporteSugerido: 0 });
+    }
+    result[frasco] = { total, aporte: aporteF, rows };
+  }
+  return result;
+}
+
+const REB_FRASCOS = [['colchon', 'Colchón'], ['casa', 'Frasco Casa'], ['jubilacion', 'Frasco Jubilación']];
+
+function renderRebalanceo(reb) {
+  const cont = document.getElementById('rebalanceo-cont');
+  if (!cont) return;
+  const hayDatos = REB_FRASCOS.some(([k]) => reb[k] && (reb[k].total > 0 || reb[k].aporte > 0));
+  if (!hayDatos) {
+    cont.innerHTML = '<div class="info-box">Conectá IOL/Cocos y cargá tu sueldo en la Calculadora para ver el rebalanceo: composición real vs target y cómo repartir el próximo aporte.</div>';
+    return;
+  }
+  let html = '';
+  for (const [key, label] of REB_FRASCOS) {
+    const f = reb[key];
+    if (!f) continue;
+    html += '<div class="line-chart-wrapper" style="padding:14px;">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:8px;">';
+    html += `<h4 style="margin:0; color:#1e3a8a;">${label}</h4>`;
+    html += `<div style="font-size:0.85em; color:#6b7280;">Real: <strong>${formatUSD(f.total)}</strong> · Aporte del mes: <strong>${formatUSD(f.aporte)}</strong></div>`;
+    html += '</div>';
+    html += '<div style="overflow-x:auto;"><table class="historico-table"><thead><tr>';
+    html += '<th>Instrumento</th><th>Real USD</th><th>Real %</th><th>Target %</th><th>Desvío</th><th>Aporte sugerido</th>';
+    html += '</tr></thead><tbody>';
+    for (const r of f.rows) {
+      const sub = r.simbolos && r.simbolos.length ? `<div style="font-size:0.78em; color:#9ca3af;">${r.simbolos.join(', ')}</div>` : '';
+      const realPctTxt = (r.realPct * 100).toFixed(0) + '%';
+      const targetTxt = r.targetPct === null ? '—' : (r.targetPct * 100).toFixed(0) + '%';
+      let desvTxt = '—', desvColor = '#9ca3af';
+      if (r.desvio !== null) {
+        const d = r.desvio * 100;
+        desvTxt = (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(0) + 'pp';
+        desvColor = Math.abs(d) <= 2 ? '#047857' : (d > 0 ? '#b91c1c' : '#1d4ed8');
+      }
+      const aporteTxt = r.aporteSugerido > 0 ? formatUSD(r.aporteSugerido) : '—';
+      html += `<tr><td>${r.nombre}${sub}</td><td>${formatUSD(r.real)}</td><td>${realPctTxt}</td><td>${targetTxt}</td>` +
+        `<td style="color:${desvColor};">${desvTxt}</td><td><strong>${aporteTxt}</strong></td></tr>`;
+    }
+    html += '</tbody></table></div>';
+    html += '</div>';
+  }
+  cont.innerHTML = html;
+}
+
+// Panel de matcheo (engranaje): por cada símbolo con tenencia, elegir su instrumento del plan.
+function renderRebalanceoConfig(holdings) {
+  const cont = document.getElementById('rebalanceo-config');
+  if (!cont) return;
+  let rows = '';
+  for (const [frasco, label] of REB_FRASCOS) {
+    const held = holdings[frasco] || {};
+    for (const sim of Object.keys(held).sort()) {
+      const items = INSTRUMENTS[frasco] || [];
+      const actual = planItemDe(sim, frasco, iolState.instrumentos || {});
+      const opts = ['<option value="">— sin matchear —</option>']
+        .concat(items.map(i => `<option value="${i.name}"${i.name === actual ? ' selected' : ''}>${i.name}</option>`))
+        .join('');
+      rows += `<tr><td>${sim}</td><td>${label}</td>` +
+        `<td><select class="cell-input reb-match" data-sim="${sim}" style="width:100%;">${opts}</select></td></tr>`;
+    }
+  }
+  if (!rows) {
+    cont.innerHTML = '<div class="info-box">No hay tenencias mapeadas a frascos todavía. Asigná los frascos en Brokers primero.</div>';
+    return;
+  }
+  cont.innerHTML = '<div style="overflow-x:auto;"><table class="historico-table"><thead><tr>' +
+    '<th>Símbolo</th><th>Frasco</th><th>Instrumento del plan</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<small style="color:#9ca3af; display:block; margin-top:6px;">El target sale del instrumento del plan asignado. SPYD/QQQD y Colchón se auto-matchean.</small>';
+
+  cont.querySelectorAll('.reb-match').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const sim = sel.dataset.sim;
+      iolState.instrumentos = iolState.instrumentos || {};
+      if (sel.value) iolState.instrumentos[sim] = sel.value; else delete iolState.instrumentos[sim];
+      await setIolInstrumento(sim, sel.value);
+      // Re-render del rebalanceo con el matcheo nuevo (sin re-fetch)
+      renderRebalanceo(buildRebalanceo(rebHoldings, iolState.instrumentos || {}, aporteCalc));
+    });
+  });
 }
 
 // Cards: valor real actual por frasco (último mes) + plan acumulado y desvío.
@@ -5907,6 +6099,25 @@ async function setIolMapping(simbolo, frasco) {
     iolState.mapping[simbolo] = frasco;
   }
   renderIolFrascoSummary();
+}
+
+// Matcheo símbolo → instrumento del plan (para el rebalanceo). { simbolo: instrumento }
+async function fetchIolInstrumentos() {
+  if (!currentUser) return {};
+  const { data, error } = await sb.from('iol_frasco_mapping').select('simbolo, instrumento').eq('user_id', currentUser.id);
+  if (error) { console.error(error); return {}; }
+  const map = {};
+  data.forEach(r => { if (r.instrumento) map[r.simbolo] = r.instrumento; });
+  return map;
+}
+
+// Upsert parcial del instrumento del plan de un símbolo (no toca frasco). instrumento '' → null.
+async function setIolInstrumento(simbolo, instrumento) {
+  if (!currentUser) return;
+  const { error } = await sb.from('iol_frasco_mapping').upsert({
+    user_id: currentUser.id, simbolo, instrumento: instrumento || null
+  });
+  if (error) console.error(error);
 }
 
 // Lectura directa de portafolio desde Supabase (sin Edge Function — evita cold start)
@@ -7186,6 +7397,11 @@ document.getElementById('cocos-gear-btn')?.addEventListener('click', e => {
 document.getElementById('sueldo-gear-btn')?.addEventListener('click', e => {
   e.stopPropagation();
   togglePanelGearMenu('sueldo-gear-menu', 'sueldo-gear-btn');
+});
+// Rebalanceo: el engranaje togglea el panel inline de matcheo (no es un popover)
+document.getElementById('rebalanceo-gear-btn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('rebalanceo-config')?.classList.toggle('hidden');
 });
 // Click fuera → cierra cualquier menú gear
 document.addEventListener('click', e => {
